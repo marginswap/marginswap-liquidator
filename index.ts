@@ -25,6 +25,11 @@ function getContract(contractUrl: string, contractAddr: address) {
     .then(abi => new web3.eth.Contract(abi, contractAddr));
 }
 
+function getCrossMarginTrading() {
+  const url = etherscanUrl(CROSS_MARGIN_TRADING_ADDRESS);
+  return getContract(url, CROSS_MARGIN_TRADING_ADDRESS);
+}
+
 function getAccountAddresses(): Promise<List<address>> {
   const url = etherscanUrl(MARGIN_ROUTER_ADDRESS);
   return getContract(url, MARGIN_ROUTER_ADDRESS)
@@ -32,14 +37,27 @@ function getAccountAddresses(): Promise<List<address>> {
     .then(events => Seq(events).map(event => event.address).toList());
 }
 
+function canBeLiquidated(account: address): Promise<boolean> {
+  return getCrossMarginTrading()
+    .then(cmt => cmt.methods.canBeLiquidated(account));
+}
+
+function filterLiquifiable(accounts: List<address>): Promise<List<address>> {
+  return Promise.all(accounts.map(canBeLiquidated))
+    .then(statuses => accounts.zipAll(List(statuses)))
+    .then(results => results.filter(([_, liquifiable]) => liquifiable))
+    .then(results => results.map(([acct, _]) => acct));
+}
+
 function liquidateAccounts(accounts: List<address>) {
-  const url = etherscanUrl(CROSS_MARGIN_TRADING_ADDRESS);
-  return getContract(url, CROSS_MARGIN_TRADING_ADDRESS)
-    .then(crossMarginTrading => crossMarginTrading.methods.liquidate(accounts));
+  return getCrossMarginTrading()
+    .then(cmt => cmt.methods.liquidate(accounts));
 }
 
 export default function main() {
-  return getAccountAddresses().then(liquidateAccounts);
+  return getAccountAddresses()
+    .then(filterLiquifiable)
+    .then(liquidateAccounts);
 }
 
 main().then(_ => process.exit());
