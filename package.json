@@ -21,7 +21,8 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
-    "@marginswap/core-abi": "1.0.4",
+    "@marginswap/core-abi": "1.0",
+    "dotenv": "^8.2.0",
     "immutable": "^4.0.0-rc.12",
     "lodash": "^4.17.21",
     "node-fetch": "^2.6.1",
