@@ -4,13 +4,15 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx ts-node ."
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/lodash": "^4.14.168",
     "@types/node": "^14.14.37",
+    "@types/node-fetch": "^2.5.9",
     "@typescript-eslint/eslint-plugin": "^4.21.0",
     "@typescript-eslint/parser": "^4.21.0",
     "eslint": "^7.23.0",
@@ -19,8 +21,11 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
+    "@marginswap/core-abi": "1.0.4",
     "immutable": "^4.0.0-rc.12",
     "lodash": "^4.17.21",
+    "node-fetch": "^2.6.1",
+    "ts-node": "^9.1.1",
     "web3": "^1.3.5"
   }
 }
