@@ -5,7 +5,8 @@
   "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx ts-node ."
+    "start-prod": "npx ts-node . -- prod",
+    "start-dev": "npx ts-node . -- dev"
   },
   "author": "",
   "license": "ISC",

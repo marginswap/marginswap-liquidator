@@ -8,14 +8,19 @@ dotenv.config();
 
 type address = string
 
+const env = process.argv[3];
+const network = env === 'prod' ? 'mainnet' : 'kovan';
 const { ETHERSCAN_API_KEY, INFURA_KEY } = process.env;
-const MARGIN_ROUTER_ADDRESS: address = contractAddresses.kovan.MarginRouter;
-const CROSS_MARGIN_TRADING_ADDRESS: address = contractAddresses.kovan.CrossMarginTrading;
-const ETHERSCAN_BASE_URL = `http://api-kovan.etherscan.io/api?module=contract&action=getabi&apikey=${ETHERSCAN_API_KEY}`;
-const web3 = new Web3(`wss://kovan.infura.io/ws/v3/${INFURA_KEY}`);
+const MARGIN_ROUTER_ADDRESS: address = contractAddresses[network].MarginRouter;
+const CROSS_MARGIN_TRADING_ADDRESS: address = contractAddresses[network].CrossMarginTrading;
+const ETHERSCAN_BASE_URL = network === 'mainnet'
+  ? 'http://api.etherscan.io'
+  : 'http://api-kovan.etherscan.io';
+const ETHERSCAN_COMMON_PARAMS = `api?module=contract&action=getabi&apikey=${ETHERSCAN_API_KEY}`;
+const web3 = new Web3(`wss://${network}.infura.io/ws/v3/${INFURA_KEY}`);
 
 function etherscanUrl(contract: address): string {
-  return `${ETHERSCAN_BASE_URL}&address=${contract}`;
+  return `${ETHERSCAN_BASE_URL}/${ETHERSCAN_COMMON_PARAMS}&address=${contract}`;
 }
 
 function getContract(contractUrl: string, contractAddr: address) {

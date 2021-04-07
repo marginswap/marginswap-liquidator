@@ -2,4 +2,4 @@
 
 `npm install`
 
-`npm start`
+`npm run start-dev` | `npm run start-prod`
