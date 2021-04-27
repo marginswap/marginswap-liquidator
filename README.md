@@ -11,14 +11,10 @@ A script that:
 1. Run `npm install`
 2. Create a file called `.env` in the root directory with the following keys in the following format:
 ```
-ETHERSCAN_API_KEY=youretherscanapikey
-INFURA_KEY=yourinfurakey
+NODE_URL=https://yourinfuraoralchemyorsomething.node
+CHAIN_ID=1
 ```
 
 ### Usage
 
-To run on Kovan:
-`npm run start-dev` 
-
-To run on mainnet:
-`npm run start-prod`
+`npm run liquidate`

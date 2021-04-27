@@ -5,8 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start-prod": "npx ts-node . -- prod",
-    "start-dev": "npx ts-node . -- dev"
+    "liquidate": "npx ts-node . --"
   },
   "author": "",
   "license": "ISC",
@@ -21,7 +20,7 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
-    "@marginswap/core-abi": "1.1.9",
+    "@marginswap/core-abi": "1.2.1",
     "@truffle/hdwallet-provider": "^1.3.0",
     "dotenv": "^8.2.0",
     "immutable": "^4.0.0-rc.12",
