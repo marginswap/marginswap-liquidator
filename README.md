@@ -8,6 +8,7 @@ A script that:
 
 ### Setup
 
+0. Place a private key in `~/.marginswap-secret`
 1. Run `npm install`
 2. Create a file called `.env` in the root directory with the following keys in the following format:
 ```
