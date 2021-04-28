@@ -9,6 +9,7 @@ import fs from 'fs';
 
 dotenv.config();
 
+const MINIMUM_LOAN_AMOUNT = Web3.utils.toBN(5 * 10 ** 6); 
 
 type address = string;
 
@@ -22,8 +23,6 @@ if (!CHAIN_ID) {
 const chainId: "1" | "42" = CHAIN_ID as any;
 const MARGIN_ROUTER_ADDRESS: address = contractAddresses[chainId].MarginRouter;
 const CROSS_MARGIN_TRADING_ADDRESS: address = contractAddresses[chainId].CrossMarginTrading;
-
-console.log(NODE_URL)
 
 const homedir = require('os').homedir();
 const privateKey = fs.readFileSync(`${homedir}/.marginswap-secret`).toString().trim();
@@ -58,7 +57,7 @@ async function getAccountAddresses() {
 async function canBeLiquidated(account: address): Promise<boolean> {
   const cmt = new web3.eth.Contract(CrossMarginTrading.abi as any, CROSS_MARGIN_TRADING_ADDRESS);
 
-  return (await cmt.methods.canBeLiquidated(account).call()); // && (await cmt.methods.viewLoanInPeg(account).call()) > 0;
+  return (await cmt.methods.canBeLiquidated(account).call()) && Web3.utils.toBN(await cmt.methods.viewLoanInPeg(account).call()).gt(MINIMUM_LOAN_AMOUNT);
 }
 
 function liquidateAccounts(accounts: address[]) {
