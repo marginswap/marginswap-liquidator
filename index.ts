@@ -42,6 +42,7 @@ async function getAccountAddresses() {
     });
   
   const addresses = Seq(events).map(event => event.returnValues.trader).toSet();
+  console.log(`currently there are ${addresses.size} unique addresses`);
   const liquifiable: address[] = [];
 
   for (const account of addresses) {
