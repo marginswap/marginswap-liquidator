@@ -1,15 +1,13 @@
 import { Seq } from 'immutable';
-import Web3 from 'web3';
+import {Contract, utils, providers, Wallet, BigNumber } from 'ethers';
 import dotenv from 'dotenv';
 import contractAddresses from '@marginswap/core-abi/addresses.json';
 import MarginRouter from '@marginswap/core-abi/artifacts/contracts/MarginRouter.sol/MarginRouter.json';
 import CrossMarginTrading from '@marginswap/core-abi/artifacts/contracts/CrossMarginTrading.sol/CrossMarginTrading.json';
-import HDWalletProvider from '@truffle/hdwallet-provider';
 import fs from 'fs';
 
 dotenv.config();
 
-const MINIMUM_LOAN_AMOUNT = Web3.utils.toBN(5 * 10 ** 6);
 const PRICE_WINDOW = 0.14;
 
 enum AMMs {
@@ -18,7 +16,7 @@ enum AMMs {
 }
 
 function encodeAMMPath(ammPath: AMMs[]) {
-  const encoded = web3.utils.bytesToHex(ammPath.map((amm: AMMs) => (amm == AMMs.UNISWAP ? 0 : 1)));
+  const encoded = utils.hexlify(ammPath.map((amm: AMMs) => (amm == AMMs.UNISWAP ? 0 : 1)));
   return `${encoded}${'0'.repeat(64 + 2 - encoded.length)}`;
 }
 
@@ -137,7 +135,9 @@ const tokenParams: { [tokenName: string]: TokenInitRecord } = {
 
 type address = string;
 
-const { NODE_URL, CHAIN_ID } = process.env;
+const { NODE_URL, CHAIN_ID, MINIMUM_LOAN_USD } = process.env;
+
+const MINIMUM_LOAN_AMOUNT = `${MINIMUM_LOAN_USD ?? '5'}${'0'.repeat(6)}`;
 
 if (!CHAIN_ID) {
   console.log('Provide a valid chain id');
@@ -150,69 +150,93 @@ const CROSS_MARGIN_TRADING_ADDRESS: address = contractAddresses[chainId].CrossMa
 
 const homedir = require('os').homedir();
 const privateKey = fs.readFileSync(`${homedir}/.marginswap-secret`).toString().trim();
-const provider = new HDWalletProvider({
-  privateKeys:[privateKey],
-  providerOrUrl: NODE_URL
-})
-const web3 = new Web3(provider);
+const provider = new providers.JsonRpcProvider(NODE_URL);
+const wallet = new Wallet(privateKey, provider);
+
 
 async function getAccountAddresses() {
-  const router = new web3.eth.Contract(MarginRouter.abi as any, MARGIN_ROUTER_ADDRESS);
+  const router = new Contract( MARGIN_ROUTER_ADDRESS, MarginRouter.abi, wallet);
+
   const events = await router
-    .getPastEvents('AccountUpdated',
-    {
-      fromBlock: 0,
-      toBlock: 'latest'
-    });
+    .queryFilter({
+      address: MARGIN_ROUTER_ADDRESS,
+      // topics: ['AccountUpdated']
+    }, 9000000, 'latest');
   
-  const addresses = Seq(events).map(event => event.returnValues.trader).toSet();
+  const addresses = Seq(events).filter(event => event.event === 'AccountUpdated').map(event => event.args?.trader).toSet();
   console.log(`currently there are ${addresses.size} unique addresses`);
-  const liquifiable: address[] = [];
+  let liquifiable = [];
+
+  let totalLoan = 0;
+  let totalHoldings = 0;
 
   for (const account of addresses) {
     const canB = await canBeLiquidated(account); 
     if (canB) {
-
-      liquifiable.push(account);
+      liquifiable.push(canB.address);
+      const loan = canB.loan.toNumber() /  10 ** 6;
+      console.log(`${account}: ${loan}`);
+      totalLoan += loan;
+      const holdings = canB.holdings.toNumber() / 10 ** 6;
+      totalHoldings += holdings;
+      if (loan > holdings) {
+        console.log(`$${loan - holdings } shortfall for ${account}`);
+      }
     }
   }
+
+  console.log(`Total holdings: ${totalHoldings}, total loan: ${totalLoan}`);
+
   return liquifiable;
 }
 
-async function canBeLiquidated(account: address): Promise<boolean> {
-  const cmt = new web3.eth.Contract(CrossMarginTrading.abi as any, CROSS_MARGIN_TRADING_ADDRESS);
-
-  return (await cmt.methods.canBeLiquidated(account).call()) && Web3.utils.toBN(await cmt.methods.viewLoanInPeg(account).call()).gt(MINIMUM_LOAN_AMOUNT);
+async function canBeLiquidated(account: address): Promise<{address:string, loan: BigNumber, holdings: BigNumber} | undefined> {
+  if (account) {
+    const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
+    const loan = await cmt.viewLoanInPeg(account);
+    if ((await cmt.canBeLiquidated(account)) && loan.gt(MINIMUM_LOAN_AMOUNT)) {
+      return {
+        address: account,
+        loan,
+        holdings: await cmt.viewHoldingsInPeg(account)
+      }
+    } else {
+      return undefined;
+    }
+  } else {
+    return undefined;
+  }
 }
 
 function liquidateAccounts(accounts: address[]) {
-  const cmt = new web3.eth.Contract(CrossMarginTrading.abi as any, CROSS_MARGIN_TRADING_ADDRESS, {from: provider.getAddresses()[0]});
+  const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
   // cmt.defaultCommon = {customChain: {name: 'hardhat', chainId: 1, networkId: 31337}, baseChain: 'mainnet'};
   if (accounts.length > 0) {
-    return cmt.methods.liquidate(accounts).send();
+    return cmt.liquidate(accounts);
   }
 }
 
 async function priceDisparity(name:string) {
-  const router = new web3.eth.Contract(MarginRouter.abi as any, MARGIN_ROUTER_ADDRESS);
-  const cmt = new web3.eth.Contract(CrossMarginTrading.abi as any, CROSS_MARGIN_TRADING_ADDRESS, {from: provider.getAddresses()[0]});
+  const router = new Contract(MARGIN_ROUTER_ADDRESS, MarginRouter.abi, wallet);
+  const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
   const tokens = tokenParams[name].liquidationTokenPath;
   tokens?.push('USDT');
   const path = tokens?.map((tokenName) => tokenAddresses[tokenName]);
   const amms = encodeAMMPath(tokenParams[name].ammPath || [AMMs.UNISWAP]);
   const amountOut = 10 * 10 ** 6;
-  const amountIn = (await router.methods.getAmountsIn(amountOut, amms, path).call())[0];
-  return Web3.utils.toBN(await cmt.methods.viewCurrentPriceInPeg(tokenAddresses[name], amountIn).call()).toNumber() / amountOut;
+  const amountIn = (await router.getAmountsIn(amountOut, amms, path))[0];
+  return (await cmt.viewCurrentPriceInPeg(tokenAddresses[name], amountIn)).toNumber() / amountOut;
 }
 
 
 export default async function main() {
-  const cmt = new web3.eth.Contract(CrossMarginTrading.abi as any, CROSS_MARGIN_TRADING_ADDRESS, {from: provider.getAddresses()[0]});
+  const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
   for (const tokenId in tokenAddresses) {
     const priceDisp = await priceDisparity(tokenId);
     if (priceDisp > 1 + PRICE_WINDOW || priceDisp < 1 - PRICE_WINDOW) {
-      console.log(`Upddating price of ${tokenId}`);
-      await cmt.methods.getCurrentPriceInPeg(tokenAddresses[tokenId], 10 ** 18, true);
+      console.log();
+      const tx = await cmt.getCurrentPriceInPeg(tokenAddresses[tokenId], `1${'0'.repeat(18)}`, true);
+      console.log(`Upddating price of ${tokenId}: ${tx.hash}`);
     }
   }
   return getAccountAddresses()
