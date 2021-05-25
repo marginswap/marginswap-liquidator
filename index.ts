@@ -19,21 +19,51 @@ function encodeAMMPath(ammPath: AMMs[]) {
   return `${encoded}${'0'.repeat(64 + 2 - encoded.length)}`;
 }
 
-const tokenAddresses: Record<string, string> = {
-  DAI: '0x6b175474e89094c44da98b954eedeac495271d0f',
-  WETH: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-  UNI: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
-  MKR: '0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2',
-  USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-  BOND: '0x0391D2021f89DC339F60Fff84546EA23E337750f',
-  LINK: '0x514910771af9ca656af840dff83e8264ecf986ca',
-  USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-  WBTC: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
-  SUSHI: '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2',
-  ALCX: '0xdbdb4d16eda451d0503b854cf79d55697f90c8df'
+const baseCurrency: Record<string, string> = {
+  '42': 'WETH',
+  '1': 'WETH',
+  '43114': 'WAVAX',
+  '31337': 'WETH'
 };
 
-type TokenInitRecord = {
+export const tokensPerNetwork: Record<string, Record<string, string>> = {
+  42: {
+    //    USDT: USDT_ADDRESS,
+    DAI: '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa',
+    WETH: '0xd0a1e359811322d97991e03f863a0c30c2cf029c',
+    UNI: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984'
+    //    MKR: "0xac94ea989f6955c67200dd67f0101e1865a560ea",
+  },
+  1: {
+    DAI: '0x6b175474e89094c44da98b954eedeac495271d0f',
+    WETH: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+    UNI: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
+    MKR: '0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2',
+    USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+    BOND: '0x0391D2021f89DC339F60Fff84546EA23E337750f',
+    LINK: '0x514910771af9ca656af840dff83e8264ecf986ca',
+    USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    WBTC: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+    SUSHI: '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2',
+    ALCX: '0xdbdb4d16eda451d0503b854cf79d55697f90c8df'
+  },
+  31337: {
+    DAI: '0x6b175474e89094c44da98b954eedeac495271d0f',
+    WETH: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+    USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+    ALCX: '0xdbdb4d16eda451d0503b854cf79d55697f90c8df',
+    UNI: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984'
+  },
+  43114: {
+    WAVAX: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
+    ETH: '0xf20d962a6c8f70c731bd838a3a388D7d48fA6e15',
+    PNG: '0x60781C2586D68229fde47564546784ab3fACA982',
+    WBTC: '0x408D4cD0ADb7ceBd1F1A1C33A0Ba2098E1295bAB',
+    USDT: '0xde3A24028580884448a5397872046a019649b084'
+  }
+};
+
+ type TokenInitRecord = {
   exposureCap: number;
   lendingBuffer: number;
   incentiveWeight: number;
@@ -47,35 +77,35 @@ const tokenParams: { [tokenName: string]: TokenInitRecord } = {
     exposureCap: 10000000,
     lendingBuffer: 10000,
     incentiveWeight: 3,
-    liquidationTokenPath: ['DAI', 'WETH'],
+    liquidationTokenPath: ['DAI', 'BASE'],
     decimals: 18
   },
   WETH: {
     exposureCap: 100000,
     lendingBuffer: 500,
     incentiveWeight: 3,
-    liquidationTokenPath: ['WETH'],
+    liquidationTokenPath: ['BASE'],
     decimals: 18
   },
   UNI: {
     exposureCap: 100000,
     lendingBuffer: 500,
     incentiveWeight: 5,
-    liquidationTokenPath: ['UNI', 'WETH'],
+    liquidationTokenPath: ['UNI', 'BASE'],
     decimals: 18
   },
   MKR: {
     exposureCap: 2000,
     lendingBuffer: 80,
     incentiveWeight: 5,
-    liquidationTokenPath: ['MKR', 'WETH'],
+    liquidationTokenPath: ['MKR', 'BASE'],
     decimals: 18
   },
   USDT: {
     exposureCap: 100000000,
     lendingBuffer: 10000,
     incentiveWeight: 3,
-    liquidationTokenPath: ['USDT', 'WETH'],
+    liquidationTokenPath: ['USDT', 'BASE'],
     decimals: 6
   },
   BOND: {
@@ -89,7 +119,7 @@ const tokenParams: { [tokenName: string]: TokenInitRecord } = {
     exposureCap: 200000,
     lendingBuffer: 100,
     incentiveWeight: 1,
-    liquidationTokenPath: ['LINK', 'WETH'],
+    liquidationTokenPath: ['LINK', 'BASE'],
     decimals: 18,
     ammPath: [AMMs.SUSHISWAP, AMMs.UNISWAP]
   },
@@ -97,21 +127,21 @@ const tokenParams: { [tokenName: string]: TokenInitRecord } = {
     exposureCap: 100000000,
     lendingBuffer: 10000,
     incentiveWeight: 3,
-    liquidationTokenPath: ['USDC', 'WETH'],
+    liquidationTokenPath: ['USDC', 'BASE'],
     decimals: 6
   },
   WBTC: {
     exposureCap: 2000,
     lendingBuffer: 20,
     incentiveWeight: 3,
-    liquidationTokenPath: ['WBTC', 'WETH'],
+    liquidationTokenPath: ['WBTC', 'BASE'],
     decimals: 8
   },
   SUSHI: {
     exposureCap: 300000,
     lendingBuffer: 4000,
     incentiveWeight: 1,
-    liquidationTokenPath: ['SUSHI', 'WETH'],
+    liquidationTokenPath: ['SUSHI', 'BASE'],
     decimals: 18,
     ammPath: [AMMs.SUSHISWAP, AMMs.SUSHISWAP, AMMs.SUSHISWAP]
   },
@@ -119,22 +149,46 @@ const tokenParams: { [tokenName: string]: TokenInitRecord } = {
     exposureCap: 10000,
     lendingBuffer: 100,
     incentiveWeight: 2,
-    liquidationTokenPath: ['ALCX', 'WETH'],
+    liquidationTokenPath: ['ALCX', 'BASE'],
     decimals: 18,
     ammPath: [AMMs.SUSHISWAP, AMMs.SUSHISWAP, AMMs.SUSHISWAP]
-  }
+  },
+  WAVAX: {
+    exposureCap: 1000000,
+    lendingBuffer: 10000,
+    incentiveWeight: 3,
+    liquidationTokenPath: ['WAVAX'],
+    decimals: 18
+  },
+  ETH: {
+    exposureCap: 100000,
+    lendingBuffer: 500,
+    incentiveWeight: 3,
+    liquidationTokenPath: ['ETH', 'BASE'],
+    decimals: 18
+  },
+  PNG: {
+    exposureCap: 1000000,
+    lendingBuffer: 1,
+    incentiveWeight: 3,
+    liquidationTokenPath: ['PNG', 'BASE'],
+    decimals: 18
+  },
 };
 
-const liquiPaths: Record<string, [string, string[], AMMs[]]> = {}
-
-for (let name in tokenParams) {
-  liquiPaths[getAddress(tokenAddresses[name])] = [name, [...tokenParams[name].liquidationTokenPath, 'USDT'], tokenParams[name].ammPath ?? [AMMs.UNISWAP]];
+function replaceBase(tokenPath:string[]) {
+  return tokenPath.map((tName) => tName === 'BASE' ? baseCurrency[CHAIN_ID ?? '1'] : tName);
 }
+
+const liquiPaths: Record<string, [string, string[], AMMs[]]> = {}
 
 type address = string;
 
 const { NODE_URL, CHAIN_ID, MINIMUM_LOAN_USD, PRICE_WINDOW } = process.env;
 
+for (let name in tokensPerNetwork[CHAIN_ID ?? '1']) {
+  liquiPaths[getAddress(tokensPerNetwork[CHAIN_ID ?? '1'][name])] = [name, [...replaceBase(tokenParams[name].liquidationTokenPath), 'USDT'], tokenParams[name].ammPath ?? [AMMs.UNISWAP]];
+}
 
 const MINIMUM_LOAN_AMOUNT = `${MINIMUM_LOAN_USD ?? '5'}${'0'.repeat(6)}`;
 
@@ -220,7 +274,8 @@ function liquidateAccounts(accounts: address[]) {
 async function priceDisparity(name:string) {
   const router = new Contract(MARGIN_ROUTER_ADDRESS, MarginRouter.abi, wallet);
   const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
-  const tokens = tokenParams[name].liquidationTokenPath;
+  const tokens = replaceBase(tokenParams[name].liquidationTokenPath);
+  const tokenAddresses = tokensPerNetwork[CHAIN_ID ?? '1'];
   tokens?.push('USDT');
   const path = tokens?.map((tokenName) => tokenAddresses[tokenName]);
   const amms = encodeAMMPath(tokenParams[name].ammPath || [AMMs.UNISWAP]);
@@ -237,6 +292,8 @@ async function priceDisparity(name:string) {
 
 export default async function main() {
   const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
+  const tokenAddresses = tokensPerNetwork[CHAIN_ID ?? '1'];
+
   if (PRICE_WINDOW) {
     const window = parseFloat(PRICE_WINDOW);
     for (const tokenId in tokenAddresses) {
