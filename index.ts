@@ -5,10 +5,9 @@ import contractAddresses from '@marginswap/core-abi/addresses.json';
 import MarginRouter from '@marginswap/core-abi/artifacts/contracts/MarginRouter.sol/MarginRouter.json';
 import CrossMarginTrading from '@marginswap/core-abi/artifacts/contracts/CrossMarginTrading.sol/CrossMarginTrading.json';
 import fs from 'fs';
+import { getAddress } from '@ethersproject/address';
 
 dotenv.config();
-
-const PRICE_WINDOW = 0.14;
 
 enum AMMs {
   UNISWAP,
@@ -38,7 +37,7 @@ type TokenInitRecord = {
   exposureCap: number;
   lendingBuffer: number;
   incentiveWeight: number;
-  liquidationTokenPath?: string[];
+  liquidationTokenPath: string[];
   decimals: number;
   ammPath?: AMMs[];
 };
@@ -123,19 +122,19 @@ const tokenParams: { [tokenName: string]: TokenInitRecord } = {
     liquidationTokenPath: ['ALCX', 'WETH'],
     decimals: 18,
     ammPath: [AMMs.SUSHISWAP, AMMs.SUSHISWAP, AMMs.SUSHISWAP]
-  },
-
-  LOCALPEG: {
-    exposureCap: 1000000,
-    lendingBuffer: 10000,
-    incentiveWeight: 5,
-    decimals: 18
   }
 };
 
+const liquiPaths: Record<string, [string, string[], AMMs[]]> = {}
+
+for (let name in tokenParams) {
+  liquiPaths[getAddress(tokenAddresses[name])] = [name, [...tokenParams[name].liquidationTokenPath, 'USDT'], tokenParams[name].ammPath ?? [AMMs.UNISWAP]];
+}
+
 type address = string;
 
-const { NODE_URL, CHAIN_ID, MINIMUM_LOAN_USD } = process.env;
+const { NODE_URL, CHAIN_ID, MINIMUM_LOAN_USD, PRICE_WINDOW } = process.env;
+
 
 const MINIMUM_LOAN_AMOUNT = `${MINIMUM_LOAN_USD ?? '5'}${'0'.repeat(6)}`;
 
@@ -173,39 +172,41 @@ async function getAccountAddresses() {
   for (const account of addresses) {
     const canB = await canBeLiquidated(account); 
     if (canB) {
-      liquifiable.push(canB.address);
       const loan = canB.loan.toNumber() /  10 ** 6;
-      console.log(`${account}: ${loan}`);
-      totalLoan += loan;
       const holdings = canB.holdings.toNumber() / 10 ** 6;
-      totalHoldings += holdings;
-      if (loan > holdings) {
-        console.log(`$${loan - holdings } shortfall for ${account}`);
+      if (canB.canBeLiquidated) {
+        liquifiable.push(canB.address);
+        totalLoan += loan;
+        totalHoldings += holdings;
+      }
+
+      if (holdings > 100) {
+        console.log(`${account}: ${holdings} / ${loan}`);
+        if (loan > holdings) {
+          console.log(`$${loan - holdings } shortfall for ${account}`);
+        }
       }
     }
   }
 
-  console.log(`Total holdings: ${totalHoldings}, total loan: ${totalLoan}`);
+  console.log(`To liquidate: Total holdings: ${totalHoldings}, total loan: ${totalLoan}`);
 
   return liquifiable;
 }
 
-async function canBeLiquidated(account: address): Promise<{address:string, loan: BigNumber, holdings: BigNumber} | undefined> {
+async function canBeLiquidated(account: address): Promise<{address:string, loan: BigNumber, holdings: BigNumber, canBeLiquidated: boolean} | undefined > {
   if (account) {
     const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
     const loan = await cmt.viewLoanInPeg(account);
-    if ((await cmt.canBeLiquidated(account)) && loan.gt(MINIMUM_LOAN_AMOUNT)) {
+    const holdings = await cmt.viewHoldingsInPeg(account);
+    const canBeLiquidated = (await cmt.canBeLiquidated(account)) && loan.gt(MINIMUM_LOAN_AMOUNT);
       return {
+        canBeLiquidated,
         address: account,
         loan,
-        holdings: await cmt.viewHoldingsInPeg(account)
+        holdings
       }
-    } else {
-      return undefined;
     }
-  } else {
-    return undefined;
-  }
 }
 
 function liquidateAccounts(accounts: address[]) {
@@ -223,21 +224,29 @@ async function priceDisparity(name:string) {
   tokens?.push('USDT');
   const path = tokens?.map((tokenName) => tokenAddresses[tokenName]);
   const amms = encodeAMMPath(tokenParams[name].ammPath || [AMMs.UNISWAP]);
-  const amountOut = 10 * 10 ** 6;
+  const amountOut = 1 * 10 ** 6;
   const amountIn = (await router.getAmountsIn(amountOut, amms, path))[0];
-  return (await cmt.viewCurrentPriceInPeg(tokenAddresses[name], amountIn)).toNumber() / amountOut;
+  const currentPrice = (await cmt.viewCurrentPriceInPeg(tokenAddresses[name], amountIn)).toNumber();
+  const oneOfToken = `1${'0'.repeat(tokenParams[name].decimals)}`;
+  console.log((await cmt.viewCurrentPriceInPeg(tokenAddresses[name], oneOfToken)).toNumber() / (10 ** 6));
+  const outAmounts = (await router.getAmountsOut(oneOfToken, amms, path));
+  console.log(outAmounts[outAmounts.length - 1].toNumber() / (10 ** 6));
+  return currentPrice / amountOut;
 }
 
 
 export default async function main() {
   const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
-  for (const tokenId in tokenAddresses) {
-    const priceDisp = await priceDisparity(tokenId);
-    if (priceDisp > 1 + PRICE_WINDOW || priceDisp < 1 - PRICE_WINDOW) {
+  if (PRICE_WINDOW) {
+    const window = parseFloat(PRICE_WINDOW);
+    for (const tokenId in tokenAddresses) {
       console.log();
-      const tx = await cmt.getCurrentPriceInPeg(tokenAddresses[tokenId], `1${'0'.repeat(18)}`, true);
-      console.log(`Upddating price of ${tokenId}: ${tx.hash}`);
-    }
+      const priceDisp = await priceDisparity(tokenId);
+      if (priceDisp > 1 + window || priceDisp < 1 - window) {
+        const tx = await cmt.getCurrentPriceInPeg(tokenAddresses[tokenId], `1${'0'.repeat(18)}`, true);
+        console.log(`Upddating price of ${tokenId}: ${tx.hash}`);
+      }
+    }  
   }
   return getAccountAddresses()
     .then((liquifiableAccounts) => {
@@ -251,3 +260,36 @@ export default async function main() {
 }
 
 main().then(_ => process.exit());
+
+
+// async function controlInPeg(tokens: string[], amounts:BigNumber[]) {
+//   const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
+//   const router = new Contract(MARGIN_ROUTER_ADDRESS, MarginRouter.abi, wallet);
+
+//   let contractTotal = BigNumber.from('0');
+//   let controlTotal = BigNumber.from('0');
+//   for (let i = 0; tokens.length > i; i++) {
+//     const fromContract = await cmt.viewCurrentPriceInPeg(tokens[i], amounts[i]);
+
+//     const [name, namePath, ammPath] = liquiPaths[tokens[i]]; 
+//     const path = namePath.map((tokenName) => tokenAddresses[tokenName]);
+//     const amms = encodeAMMPath(ammPath);
+  
+//     const control = (await router.getAmountsOut(amounts[i], amms, path));
+//     console.log(`${name}: ${fromContract.div(10 ** 6)} | ${control[control.length - 1].div(10 ** 6)}`);
+
+//     contractTotal = contractTotal.add(fromContract);
+//     controlTotal = controlTotal.add(control[control.length - 1]);
+//   }
+//   console.log(`Total: ${contractTotal.div(10 ** 6)} | ${controlTotal.div(10 ** 6)}`);
+// }
+
+// async function controlAccount(accountAddress:string) {
+//   const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
+//   let [tokens, amounts] = await cmt.getHoldingAmounts(accountAddress);
+//   console.log(`Holdings for ${accountAddress}:`);
+//   await controlInPeg(tokens, amounts);
+//   [tokens, amounts] = await cmt.getBorrowAmounts(accountAddress);
+//   console.log(`Loans for ${accountAddress}:`);
+//   await controlInPeg(tokens, amounts);
+// }
