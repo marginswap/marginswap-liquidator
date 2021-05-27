@@ -11,9 +11,21 @@ A script that:
 0. Place a private key in `~/.marginswap-secret`
 1. Run `npm install`
 2. Create a file called `.env` in the root directory with the following keys in the following format:
+
 ```
 NODE_URL=https://yourinfuraoralchemyorsomething.node
 CHAIN_ID=1
+# set this to the block that the router was initiated
+# for avalanche
+START_BLOCK=2054306
+# for ethereum mainnet
+START_BLOCK=9000000
+
+# optional parameters:
+# window facto within which to update prices
+PRICE_WINDOW=0.1
+# minimum loan amount for which to trigger liquidation
+MINIMUM_LOAN_USD=5
 ```
 
 ### Usage

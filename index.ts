@@ -184,7 +184,8 @@ const liquiPaths: Record<string, [string, string[], AMMs[]]> = {}
 
 type address = string;
 
-const { NODE_URL, CHAIN_ID, MINIMUM_LOAN_USD, PRICE_WINDOW } = process.env;
+const { NODE_URL, CHAIN_ID, MINIMUM_LOAN_USD, PRICE_WINDOW, START_BLOCK } = process.env;
+const START_BLOCK_PARSED = parseInt(START_BLOCK ?? '9000000');
 
 for (let name in tokensPerNetwork[CHAIN_ID ?? '1']) {
   liquiPaths[getAddress(tokensPerNetwork[CHAIN_ID ?? '1'][name])] = [name, [...replaceBase(tokenParams[name].liquidationTokenPath), 'USDT'], tokenParams[name].ammPath ?? [AMMs.UNISWAP]];
@@ -214,7 +215,7 @@ async function getAccountAddresses() {
     .queryFilter({
       address: MARGIN_ROUTER_ADDRESS,
       // topics: ['AccountUpdated']
-    }, 9000000, 'latest');
+    }, START_BLOCK_PARSED, 'latest');
   
   const addresses = Seq(events).filter(event => event.event === 'AccountUpdated').map(event => event.args?.trader).toSet();
   console.log(`currently there are ${addresses.size} unique addresses`);
