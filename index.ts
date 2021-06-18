@@ -1,4 +1,3 @@
-import { Seq } from 'immutable';
 import {Contract, utils, providers, Wallet, BigNumber } from 'ethers';
 import dotenv from 'dotenv';
 import contractAddresses from '@marginswap/core-abi/addresses.json';
@@ -40,7 +39,7 @@ export const tokensPerNetwork: Record<string, Record<string, string>> = {
     UNI: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
     MKR: '0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2',
     USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-    BOND: '0x0391D2021f89DC339F60Fff84546EA23E337750f',
+    // BOND: '0x0391D2021f89DC339F60Fff84546EA23E337750f',
     LINK: '0x514910771af9ca656af840dff83e8264ecf986ca',
     USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
     WBTC: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
@@ -210,37 +209,42 @@ const wallet = new Wallet(privateKey, provider);
 
 async function getAccountAddresses() {
   const router = new Contract( MARGIN_ROUTER_ADDRESS, MarginRouter.abi, wallet);
-
+  const topic = utils.id('AccountUpdated(address)');
   const events = await router
     .queryFilter({
       address: MARGIN_ROUTER_ADDRESS,
-      // topics: ['AccountUpdated']
+      topics: [topic]
     }, START_BLOCK_PARSED, 'latest');
-  
-  const addresses = Seq(events).filter(event => event.event === 'AccountUpdated').map(event => event.args?.trader).toSet();
-  console.log(`currently there are ${addresses.size} unique addresses`);
-  let liquifiable = [];
 
+  // console.log(`currently there are ${addresses.size} unique addresses`);
+  let liquifiable = [];
+  
   let totalLoan = 0;
   let totalHoldings = 0;
 
-  for (const account of addresses) {
-    const canB = await canBeLiquidated(account); 
-    if (canB) {
-      const loan = canB.loan.toNumber() /  10 ** 6;
-      const holdings = canB.holdings.toNumber() / 10 ** 6;
-      if (canB.canBeLiquidated) {
-        liquifiable.push(canB.address);
-        totalLoan += loan;
-        totalHoldings += holdings;
-      }
+  const seenAccounts: Set<string> = new Set();
 
-      if (holdings > 100) {
-        console.log(`${account}: ${holdings} / ${loan}`);
-        if (loan > holdings) {
-          console.log(`$${loan - holdings } shortfall for ${account}`);
+  for (const event of events) {
+    const account = event.args?.trader;
+    if (!seenAccounts.has(account)) {
+      seenAccounts.add(account);
+      const canB = await canBeLiquidated(account); 
+      if (canB) {
+        const loan = canB.loan.toNumber() /  10 ** 6;
+        const holdings = canB.holdings.toNumber() / 10 ** 6;
+        if (canB.canBeLiquidated) {
+          liquifiable.push(canB.address);
+          totalLoan += loan;
+          totalHoldings += holdings;
         }
-      }
+  
+        if (holdings > 100) {
+          console.log(`${account}: ${holdings} / ${loan}`);
+          if (loan > holdings) {
+            console.log(`$${loan - holdings } shortfall for ${account}`);
+          }
+        }
+      }  
     }
   }
 
@@ -268,7 +272,7 @@ function liquidateAccounts(accounts: address[]) {
   const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
   // cmt.defaultCommon = {customChain: {name: 'hardhat', chainId: 1, networkId: 31337}, baseChain: 'mainnet'};
   if (accounts.length > 0) {
-    return cmt.liquidate(accounts);
+    return cmt.liquidate(accounts, {gasLimit: 8000000 });
   }
 }
 
