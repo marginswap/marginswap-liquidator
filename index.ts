@@ -59,6 +59,16 @@ export const tokensPerNetwork: Record<string, Record<string, string>> = {
     PNG: '0x60781C2586D68229fde47564546784ab3fACA982',
     WBTC: '0x408D4cD0ADb7ceBd1F1A1C33A0Ba2098E1295bAB',
     USDT: '0xde3A24028580884448a5397872046a019649b084'
+  },
+  matic: {
+    USDC: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+    WBTC: "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+    DAI: "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
+    WETH: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+    WMATIC: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    USDT: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+    LINK: "0x53E0bca35eC356BD5ddDFebbD1Fc0fD03FaBad39",
+    AAVE: "0xD6DF932A45C0f255f85145f286eA0b292B21C90B",
   }
 };
 
@@ -120,7 +130,7 @@ const tokenParams: { [tokenName: string]: TokenInitRecord } = {
     incentiveWeight: 1,
     liquidationTokenPath: ['LINK', 'BASE'],
     decimals: 18,
-    ammPath: [AMMs.SUSHISWAP, AMMs.UNISWAP]
+    ammPath: [AMMs.UNISWAP, AMMs.UNISWAP]
   },
   USDC: {
     exposureCap: 100000000,
@@ -159,6 +169,13 @@ const tokenParams: { [tokenName: string]: TokenInitRecord } = {
     liquidationTokenPath: ['WAVAX'],
     decimals: 18
   },
+  WMATIC: {
+    exposureCap: 1000000,
+    lendingBuffer: 10000,
+    incentiveWeight: 3,
+    liquidationTokenPath: ['WMATIC'],
+    decimals: 18
+  },
   ETH: {
     exposureCap: 100000,
     lendingBuffer: 500,
@@ -171,6 +188,13 @@ const tokenParams: { [tokenName: string]: TokenInitRecord } = {
     lendingBuffer: 1,
     incentiveWeight: 3,
     liquidationTokenPath: ['PNG', 'BASE'],
+    decimals: 18
+  },
+  AAVE: {
+    exposureCap: 1000000,
+    lendingBuffer: 1,
+    incentiveWeight: 3,
+    liquidationTokenPath: ['AAVE', 'BASE'],
     decimals: 18
   },
 };
@@ -304,8 +328,9 @@ export default async function main() {
     for (const tokenId in tokenAddresses) {
       console.log();
       const priceDisp = await priceDisparity(tokenId);
+      console.log(tokenId);
       if (priceDisp > 1 + window || priceDisp < 1 - window) {
-        const tx = await cmt.getCurrentPriceInPeg(tokenAddresses[tokenId], `1${'0'.repeat(18)}`, true);
+        const tx = await cmt.getCurrentPriceInPeg(tokenAddresses[tokenId], `1${'0'.repeat(18)}`, true, {gasLimit: 800000 });
         console.log(`Upddating price of ${tokenId}: ${tx.hash}`);
       }
     }  
