@@ -1,10 +1,12 @@
-import {Contract, utils, providers, Wallet, BigNumber } from 'ethers';
+import { Contract, utils, providers, Wallet, BigNumber } from 'ethers';
 import dotenv from 'dotenv';
 import contractAddresses from '@marginswap/core-abi/addresses.json';
 import MarginRouter from '@marginswap/core-abi/artifacts/contracts/MarginRouter.sol/MarginRouter.json';
 import CrossMarginTrading from '@marginswap/core-abi/artifacts/contracts/CrossMarginTrading.sol/CrossMarginTrading.json';
 import fs from 'fs';
 import { getAddress } from '@ethersproject/address';
+import path from 'path';
+import addresses from './addresses.json';
 
 dotenv.config();
 
@@ -60,7 +62,7 @@ export const tokensPerNetwork: Record<string, Record<string, string>> = {
     WBTC: '0x408D4cD0ADb7ceBd1F1A1C33A0Ba2098E1295bAB',
     USDT: '0xde3A24028580884448a5397872046a019649b084'
   },
-  matic: {
+  137: {
     USDC: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
     WBTC: "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
     DAI: "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
@@ -69,10 +71,20 @@ export const tokensPerNetwork: Record<string, Record<string, string>> = {
     USDT: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
     LINK: "0x53E0bca35eC356BD5ddDFebbD1Fc0fD03FaBad39",
     AAVE: "0xD6DF932A45C0f255f85145f286eA0b292B21C90B",
+  },
+  56: {
+    WBNB: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
+    CAKE: '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82',
+    ETH: '0x2170ed0880ac9a755fd29b2688956bd959f933f8',
+    USDC: '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d',
+    BUSD: '0xe9e7cea3dedca5984780bafc599bd69add087d56',
+    DAI: '0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3',
+    BTCB: '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c',
+    USDT: '0x55d398326f99059ff775485246999027b3197955'
   }
 };
 
- type TokenInitRecord = {
+type TokenInitRecord = {
   exposureCap: number;
   lendingBuffer: number;
   incentiveWeight: number;
@@ -81,7 +93,35 @@ export const tokensPerNetwork: Record<string, Record<string, string>> = {
   ammPath?: AMMs[];
 };
 
-const tokenParams: { [tokenName: string]: TokenInitRecord } = {
+const tokenParams: { [tokenName: string]: TokenInitRecord; } = {
+  WBNB: {
+    exposureCap: 1000000,
+    lendingBuffer: 10000,
+    incentiveWeight: 3,
+    liquidationTokenPath: ['WBNB'],
+    decimals: 18
+  },
+  CAKE: {
+    exposureCap: 200000,
+    lendingBuffer: 100,
+    incentiveWeight: 1,
+    liquidationTokenPath: ['CAKE', 'BASE'],
+    decimals: 18,
+  },
+  BUSD: {
+    exposureCap: 10000000,
+    lendingBuffer: 10000,
+    incentiveWeight: 3,
+    liquidationTokenPath: ['BUSD', 'BASE'],
+    decimals: 18
+  },
+  BTCB: {
+    exposureCap: 2000,
+    lendingBuffer: 20,
+    incentiveWeight: 3,
+    liquidationTokenPath: ['BTCB', 'BASE'],
+    decimals: 18
+  },
   DAI: {
     exposureCap: 10000000,
     lendingBuffer: 10000,
@@ -199,29 +239,32 @@ const tokenParams: { [tokenName: string]: TokenInitRecord } = {
   },
 };
 
-function replaceBase(tokenPath:string[]) {
-  return tokenPath.map((tName) => tName === 'BASE' ? baseCurrency[CHAIN_ID ?? '1'] : tName);
+function replaceBase(tokenPath: string[]) {
+  return tokenPath.map((tName) => tName === 'BASE' ? baseCurrency[targetChainId] : tName);
 }
 
-const liquiPaths: Record<string, [string, string[], AMMs[]]> = {}
+const liquiPaths: Record<string, [string, string[], AMMs[]]> = {};
 
 type address = string;
 
-const { NODE_URL, CHAIN_ID, MINIMUM_LOAN_USD, PRICE_WINDOW, START_BLOCK } = process.env;
-const START_BLOCK_PARSED = parseInt(START_BLOCK ?? '9000000');
+const { NODE_URL, CHAIN_ID, MINIMUM_LOAN_USD, PRICE_WINDOW } = process.env;
 
-for (let name in tokensPerNetwork[CHAIN_ID ?? '1']) {
-  liquiPaths[getAddress(tokensPerNetwork[CHAIN_ID ?? '1'][name])] = [name, [...replaceBase(tokenParams[name].liquidationTokenPath), 'USDT'], tokenParams[name].ammPath ?? [AMMs.UNISWAP]];
+const targetChainId: '1' | '43114' | '137' | '56'  = CHAIN_ID as unknown as '1' | '43114' | '137' | '56';
+
+const pegDecimals = targetChainId === '56' ? 10 ** 18 : 10 ** 6;
+
+for (let name in tokensPerNetwork[targetChainId]) {
+  liquiPaths[getAddress(tokensPerNetwork[targetChainId][name])] = [name, [...replaceBase(tokenParams[name].liquidationTokenPath), 'USDT'], tokenParams[name].ammPath ?? [AMMs.UNISWAP]];
 }
 
 const MINIMUM_LOAN_AMOUNT = `${MINIMUM_LOAN_USD ?? '5'}${'0'.repeat(6)}`;
 
-if (!CHAIN_ID) {
+if (!targetChainId) {
   console.log('Provide a valid chain id');
   process.exit();
 }
 
-const chainId: "1" | "42" = CHAIN_ID as any;
+const chainId: "1" | "42" = targetChainId as any;
 const MARGIN_ROUTER_ADDRESS: address = contractAddresses[chainId].MarginRouter;
 const CROSS_MARGIN_TRADING_ADDRESS: address = contractAddresses[chainId].CrossMarginTrading;
 
@@ -232,43 +275,55 @@ const wallet = new Wallet(privateKey, provider);
 
 
 async function getAccountAddresses() {
-  const router = new Contract( MARGIN_ROUTER_ADDRESS, MarginRouter.abi, wallet);
+  const router = new Contract(MARGIN_ROUTER_ADDRESS, MarginRouter.abi, wallet);
+
+  const addressRecord = addresses[targetChainId];
+
   const topic = utils.id('AccountUpdated(address)');
   const events = await router
     .queryFilter({
       address: MARGIN_ROUTER_ADDRESS,
       topics: [topic]
-    }, START_BLOCK_PARSED, 'latest');
+    }, addressRecord.lastBlock, 'latest');
 
-  // console.log(`currently there are ${addresses.size} unique addresses`);
   let liquifiable = [];
-  
+
   let totalLoan = 0;
   let totalHoldings = 0;
 
-  const seenAccounts: Set<string> = new Set();
+  let userAddresses: string[] = addressRecord.users;
 
+  const seenAccounts: Set<string> = new Set(userAddresses);
+
+  let lastBlock = addressRecord.lastBlock;
   for (const event of events) {
+    lastBlock = event.blockNumber;
     const account = event.args?.trader;
     if (!seenAccounts.has(account)) {
+      userAddresses.push(account);
       seenAccounts.add(account);
-      const canB = await canBeLiquidated(account); 
-      if (canB) {
-        const loan = canB.loan.toNumber() /  10 ** 6;
-        const holdings = canB.holdings.toNumber() / 10 ** 6;
-        if (canB.canBeLiquidated) {
-          liquifiable.push(canB.address);
-          totalLoan += loan;
-          totalHoldings += holdings;
+    }
+  }
+
+  await exportAddresses(userAddresses, targetChainId, lastBlock)
+
+  for (const account of userAddresses) {
+    const meta = await getAccountMetadata(account);
+    if (meta) {
+      const loan = meta.loan.toNumber() / pegDecimals;
+      const holdings = meta.holdings.toNumber() / pegDecimals;
+      if (meta.canBeLiquidated) {
+        liquifiable.push(meta.address);
+        totalLoan += loan;
+        totalHoldings += holdings;
+      }
+
+      if (holdings > 100) {
+        console.log(`${account}: ${holdings} / ${loan}`);
+        if (loan > holdings) {
+          console.log(`$${loan - holdings} shortfall for ${account}`);
         }
-  
-        if (holdings > 100) {
-          console.log(`${account}: ${holdings} / ${loan}`);
-          if (loan > holdings) {
-            console.log(`$${loan - holdings } shortfall for ${account}`);
-          }
-        }
-      }  
+      }
     }
   }
 
@@ -277,51 +332,69 @@ async function getAccountAddresses() {
   return liquifiable;
 }
 
-async function canBeLiquidated(account: address): Promise<{address:string, loan: BigNumber, holdings: BigNumber, canBeLiquidated: boolean} | undefined > {
+async function getAccountMetadata(account: address): Promise<{ address: string, loan: BigNumber, holdings: BigNumber, canBeLiquidated: boolean; } | undefined> {
   if (account) {
     const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
     const loan = await cmt.viewLoanInPeg(account);
     const holdings = await cmt.viewHoldingsInPeg(account);
     const canBeLiquidated = (await cmt.canBeLiquidated(account)) && loan.gt(MINIMUM_LOAN_AMOUNT);
-      return {
-        canBeLiquidated,
-        address: account,
-        loan,
-        holdings
-      }
-    }
+    return {
+      canBeLiquidated,
+      address: account,
+      loan,
+      holdings
+    };
+  }
 }
 
 function liquidateAccounts(accounts: address[]) {
   const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
   // cmt.defaultCommon = {customChain: {name: 'hardhat', chainId: 1, networkId: 31337}, baseChain: 'mainnet'};
   if (accounts.length > 0) {
-    return cmt.liquidate(accounts, {gasLimit: 8000000 });
+    return cmt.liquidate(accounts, { gasLimit: 8000000 });
   }
 }
 
-async function priceDisparity(name:string) {
+async function priceDisparity(name: string) {
   const router = new Contract(MARGIN_ROUTER_ADDRESS, MarginRouter.abi, wallet);
   const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
   const tokens = replaceBase(tokenParams[name].liquidationTokenPath);
-  const tokenAddresses = tokensPerNetwork[CHAIN_ID ?? '1'];
+  const tokenAddresses = tokensPerNetwork[targetChainId];
   tokens?.push('USDT');
   const path = tokens?.map((tokenName) => tokenAddresses[tokenName]);
   const amms = encodeAMMPath(tokenParams[name].ammPath || [AMMs.UNISWAP]);
-  const amountOut = 1 * 10 ** 6;
+  const amountOut = 1 * pegDecimals;
   const amountIn = (await router.getAmountsIn(amountOut, amms, path))[0];
   const currentPrice = (await cmt.viewCurrentPriceInPeg(tokenAddresses[name], amountIn)).toNumber();
   const oneOfToken = `1${'0'.repeat(tokenParams[name].decimals)}`;
-  console.log((await cmt.viewCurrentPriceInPeg(tokenAddresses[name], oneOfToken)).toNumber() / (10 ** 6));
+  console.log((await cmt.viewCurrentPriceInPeg(tokenAddresses[name], oneOfToken)).toNumber() / (pegDecimals));
   const outAmounts = (await router.getAmountsOut(oneOfToken, amms, path));
-  console.log(outAmounts[outAmounts.length - 1].toNumber() / (10 ** 6));
+  console.log(outAmounts[outAmounts.length - 1].toNumber() / (pegDecimals));
   return currentPrice / amountOut;
+}
+
+async function exportAddresses(users: string[], chainId: string, lastBlock: number) {
+  let addresses: Record<string, { users: string[], lastBlock: number; }> = {};
+  const addressesPath = path.join(__dirname, './addresses.json');
+  if (fs.existsSync(addressesPath)) {
+    addresses = JSON.parse((await fs.promises.readFile(addressesPath)).toString());
+  }
+
+  addresses[chainId] = {
+    users,
+    lastBlock
+  };
+  const stringRepresentation = JSON.stringify(addresses, null, 2);
+
+  await fs.promises.writeFile(addressesPath, stringRepresentation);
+  console.log(`Wrote ${addressesPath}. New state:`);
+  console.log(addresses);
 }
 
 
 export default async function main() {
   const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
-  const tokenAddresses = tokensPerNetwork[CHAIN_ID ?? '1'];
+  const tokenAddresses = tokensPerNetwork[targetChainId];
 
   if (PRICE_WINDOW) {
     const window = parseFloat(PRICE_WINDOW);
@@ -330,10 +403,10 @@ export default async function main() {
       const priceDisp = await priceDisparity(tokenId);
       console.log(tokenId);
       if (priceDisp > 1 + window || priceDisp < 1 - window) {
-        const tx = await cmt.getCurrentPriceInPeg(tokenAddresses[tokenId], `1${'0'.repeat(18)}`, true, {gasLimit: 800000 });
+        const tx = await cmt.getCurrentPriceInPeg(tokenAddresses[tokenId], `1${'0'.repeat(18)}`, true, { gasLimit: 800000 });
         console.log(`Upddating price of ${tokenId}: ${tx.hash}`);
       }
-    }  
+    }
   }
   return getAccountAddresses()
     .then((liquifiableAccounts) => {
@@ -361,14 +434,14 @@ main().then(_ => process.exit());
 //     const [name, namePath, ammPath] = liquiPaths[tokens[i]]; 
 //     const path = namePath.map((tokenName) => tokenAddresses[tokenName]);
 //     const amms = encodeAMMPath(ammPath);
-  
+
 //     const control = (await router.getAmountsOut(amounts[i], amms, path));
-//     console.log(`${name}: ${fromContract.div(10 ** 6)} | ${control[control.length - 1].div(10 ** 6)}`);
+//     console.log(`${name}: ${fromContract.div(pegDecimals)} | ${control[control.length - 1].div(pegDecimals)}`);
 
 //     contractTotal = contractTotal.add(fromContract);
 //     controlTotal = controlTotal.add(control[control.length - 1]);
 //   }
-//   console.log(`Total: ${contractTotal.div(10 ** 6)} | ${controlTotal.div(10 ** 6)}`);
+//   console.log(`Total: ${contractTotal.div(pegDecimals)} | ${controlTotal.div(pegDecimals)}`);
 // }
 
 // async function controlAccount(accountAddress:string) {
