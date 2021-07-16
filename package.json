@@ -20,7 +20,7 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
-    "@marginswap/core-abi": "1.3.7",
+    "@marginswap/core-abi": "1.3.12",
     "@truffle/hdwallet-provider": "^1.3.0",
     "dotenv": "^8.2.0",
     "ethers": "^5.1.4",
