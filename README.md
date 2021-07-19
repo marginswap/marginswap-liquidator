@@ -15,11 +15,6 @@ A script that:
 ```
 NODE_URL=https://yourinfuraoralchemyorsomething.node
 CHAIN_ID=1
-# set this to the block that the router was initiated
-# for avalanche
-START_BLOCK=2054306
-# for ethereum mainnet
-START_BLOCK=9000000
 
 # optional parameters:
 # window facto within which to update prices
