@@ -250,6 +250,8 @@ type address = string;
 const { NODE_URL, CHAIN_ID, MINIMUM_LOAN_USD, PRICE_WINDOW } = process.env;
 
 const targetChainId: '1' | '43114' | '137' | '56'  = CHAIN_ID as unknown as '1' | '43114' | '137' | '56';
+console.log(`target chain: ${targetChainId}, ${NODE_URL}`);
+
 
 const pegDecimals = targetChainId === '56' ? 10 ** 18 : 10 ** 6;
 
@@ -291,21 +293,18 @@ async function getAccountAddresses() {
   let totalLoan = 0;
   let totalHoldings = 0;
 
-  let userAddresses: string[] = addressRecord.users;
-
-  const seenAccounts: Set<string> = new Set(userAddresses);
+  let userAddresses: Set<string> = new Set(addressRecord.users);
 
   let lastBlock = addressRecord.lastBlock;
   for (const event of events) {
-    lastBlock = event.blockNumber;
+    if (event.blockNumber > lastBlock) {
+      lastBlock = event.blockNumber;
+    }
     const account = event.args?.trader;
-    if (!seenAccounts.has(account)) {
-      userAddresses.push(account);
-      seenAccounts.add(account);
+    if (account) {
+      userAddresses.add(account);
     }
   }
-
-  await exportAddresses(userAddresses, targetChainId, lastBlock)
 
   for (const account of userAddresses) {
     const meta = await getAccountMetadata(account);
@@ -323,9 +322,13 @@ async function getAccountAddresses() {
         if (loan > holdings) {
           console.log(`$${loan - holdings} shortfall for ${account}`);
         }
+      } else if (5 > holdings) {
+        userAddresses.delete(account);
       }
     }
   }
+
+  await exportAddresses(Array.from(userAddresses), targetChainId, lastBlock);
 
   console.log(`To liquidate: Total holdings: ${totalHoldings}, total loan: ${totalLoan}`);
 
