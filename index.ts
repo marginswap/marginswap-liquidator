@@ -23,8 +23,10 @@ function encodeAMMPath(ammPath: AMMs[]) {
 const baseCurrency: Record<string, string> = {
   '42': 'WETH',
   '1': 'WETH',
+  '137': 'WMATIC',
   '43114': 'WAVAX',
-  '31337': 'WETH'
+  '31337': 'WETH',
+  '56': 'WBNB'
 };
 
 export const tokensPerNetwork: Record<string, Record<string, string>> = {
@@ -282,11 +284,12 @@ async function getAccountAddresses() {
   const addressRecord = addresses[targetChainId];
 
   const topic = utils.id('AccountUpdated(address)');
+  const lastBlock = Math.min(await wallet.provider.getBlockNumber(), addressRecord.lastBlock + 10000 - 1);
   const events = await router
     .queryFilter({
       address: MARGIN_ROUTER_ADDRESS,
       topics: [topic]
-    }, addressRecord.lastBlock, 'latest');
+    }, addressRecord.lastBlock, lastBlock);
 
   let liquifiable = [];
 
@@ -295,11 +298,7 @@ async function getAccountAddresses() {
 
   let userAddresses: Set<string> = new Set(addressRecord.users);
 
-  let lastBlock = addressRecord.lastBlock;
   for (const event of events) {
-    if (event.blockNumber > lastBlock) {
-      lastBlock = event.blockNumber;
-    }
     const account = event.args?.trader;
     if (account) {
       userAddresses.add(account);

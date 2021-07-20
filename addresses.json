@@ -68,8 +68,17 @@
     "lastBlock": 9000
   },
   "137": {
-    "users": [],
-    "lastBlock": 15943856
+    "users": [
+      "0x49170c910b8bd3071d0f2f91bc7fa00a4f450715",
+      "0xaacb511547521217865e9be6d96efd6062b89fa5",
+      "0x8c7f7dd735850a9d75d7a3f69b8f644e3bb5b48d",
+      "0x8740d9ec65b40be5ebb84bd22607e81260fe3a3a",
+      "0x68b18d388994336f341b4997360bb45f9f8701c9",
+      "0x68045948a843aa17449b11f061e84d5e33dae98a",
+      "0x3fb03a65f00c51c815cbdb54de843992332c5131",
+      "0x690caf2ac933a324dfb40a21d224030c7d9fcc6a"
+    ],
+    "lastBlock": 17080950
   },
   "43114": {
     "users": [
