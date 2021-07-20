@@ -253,7 +253,7 @@ const targetChainId: '1' | '43114' | '137' | '56'  = CHAIN_ID as unknown as '1' 
 console.log(`target chain: ${targetChainId}, ${NODE_URL}`);
 
 
-const pegDecimals = targetChainId === '56' ? /*10 ** 18*/ utils.parseEther('1') : BigNumber.from(10 ** 6);
+const pegDecimals = targetChainId === '56' ? utils.parseEther('1') : BigNumber.from(10 ** 6);
 
 for (let name in tokensPerNetwork[targetChainId]) {
   liquiPaths[getAddress(tokensPerNetwork[targetChainId][name])] = [name, [...replaceBase(tokenParams[name].liquidationTokenPath), 'USDT'], tokenParams[name].ammPath ?? [AMMs.UNISWAP]];
