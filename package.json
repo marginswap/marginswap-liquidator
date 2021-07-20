@@ -5,7 +5,8 @@
   "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "liquidate": "npx ts-node . --"
+    "liquidate": "npx ts-node . --",
+    "lint": "eslint --fix index.ts"
   },
   "author": "",
   "license": "ISC",
@@ -20,6 +21,7 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
+    "@ethersproject/address": "^5.4.0",
     "@marginswap/core-abi": "1.3.12",
     "@truffle/hdwallet-provider": "^1.3.0",
     "dotenv": "^8.2.0",
