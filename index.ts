@@ -253,7 +253,7 @@ const targetChainId: '1' | '43114' | '137' | '56'  = CHAIN_ID as unknown as '1' 
 console.log(`target chain: ${targetChainId}, ${NODE_URL}`);
 
 
-const pegDecimals = targetChainId === '56' ? 10 ** 18 : 10 ** 6;
+const pegDecimals = targetChainId === '56' ? /*10 ** 18*/ utils.parseEther('1') : BigNumber.from(10 ** 6);
 
 for (let name in tokensPerNetwork[targetChainId]) {
   liquiPaths[getAddress(tokensPerNetwork[targetChainId][name])] = [name, [...replaceBase(tokenParams[name].liquidationTokenPath), 'USDT'], tokenParams[name].ammPath ?? [AMMs.UNISWAP]];
@@ -290,8 +290,8 @@ async function getAccountAddresses() {
 
   let liquifiable = [];
 
-  let totalLoan = 0;
-  let totalHoldings = 0;
+  let totalLoan;
+  let totalHoldings;
 
   let userAddresses: Set<string> = new Set(addressRecord.users);
 
@@ -309,20 +309,20 @@ async function getAccountAddresses() {
   for (const account of userAddresses) {
     const meta = await getAccountMetadata(account);
     if (meta) {
-      const loan = meta.loan.toNumber() / pegDecimals;
-      const holdings = meta.holdings.toNumber() / pegDecimals;
+      const loan = meta.loan.div(pegDecimals);
+      const holdings = meta.holdings.div(pegDecimals);
       if (meta.canBeLiquidated) {
         liquifiable.push(meta.address);
-        totalLoan += loan;
-        totalHoldings += holdings;
+        totalLoan = totalLoan ? totalLoan.add(loan) : loan;
+        totalHoldings = totalHoldings ? totalHoldings.add(holdings) : holdings;
       }
 
-      if (holdings > 100) {
-        console.log(`${account}: ${holdings} / ${loan}`);
-        if (loan > holdings) {
-          console.log(`$${loan - holdings} shortfall for ${account}`);
+      if (holdings.gt(100)) {
+        console.log(`${account}: ${holdings.toString()} / ${loan}`);
+        if (loan.gt(holdings)) {
+          console.log(`$${loan.sub(holdings).toString()} shortfall for ${account}`);
         }
-      } else if (5 > holdings) {
+      } else if (holdings.lt(5)) {
         userAddresses.delete(account);
       }
     }
@@ -366,14 +366,15 @@ async function priceDisparity(name: string) {
   tokens?.push('USDT');
   const path = tokens?.map((tokenName) => tokenAddresses[tokenName]);
   const amms = encodeAMMPath(tokenParams[name].ammPath || [AMMs.UNISWAP]);
-  const amountOut = 1 * pegDecimals;
+  // TODO - Gabe - please confirm that getAmountsIn can accept a string as the first arg
+  const amountOut = pegDecimals.toString();
   const amountIn = (await router.getAmountsIn(amountOut, amms, path))[0];
-  const currentPrice = (await cmt.viewCurrentPriceInPeg(tokenAddresses[name], amountIn)).toNumber();
+  const currentPrice = (await cmt.viewCurrentPriceInPeg(tokenAddresses[name], amountIn));
   const oneOfToken = `1${'0'.repeat(tokenParams[name].decimals)}`;
-  console.log((await cmt.viewCurrentPriceInPeg(tokenAddresses[name], oneOfToken)).toNumber() / (pegDecimals));
+  console.log((await cmt.viewCurrentPriceInPeg(tokenAddresses[name], oneOfToken)).div(pegDecimals));
   const outAmounts = (await router.getAmountsOut(oneOfToken, amms, path));
-  console.log(outAmounts[outAmounts.length - 1].toNumber() / (pegDecimals));
-  return currentPrice / amountOut;
+  console.log(outAmounts[outAmounts.length - 1].div(pegDecimals));
+  return currentPrice.div(amountOut);
 }
 
 async function exportAddresses(users: string[], chainId: string, lastBlock: number) {
