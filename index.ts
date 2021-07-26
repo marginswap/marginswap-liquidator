@@ -429,7 +429,7 @@ async function exportAddresses(users: string[], chainID: string, lastBlock: numb
 
   await fs.promises.writeFile(addressesPath, stringRepresentation);
   console.log(`Wrote ${addressesPath}. New state:`);
-  console.log(addresses);
+  console.log(addressList[chainID]);
 }
 
 export default async function main() {
