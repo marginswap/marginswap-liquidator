@@ -96,6 +96,7 @@ type TokenInitRecord = {
   incentiveWeight: number;
   liquidationTokenPath: string[];
   decimals: number;
+  BSCDecimals?: number,
   ammPath?: AMMs[];
 };
 
@@ -162,6 +163,7 @@ const tokenParams: { [tokenName: string]: TokenInitRecord; } = {
     incentiveWeight: 3,
     liquidationTokenPath: ['USDT', 'BASE'],
     decimals: 6,
+    BSCDecimals: 18,
   },
   BOND: {
     exposureCap: 50000,
@@ -184,6 +186,7 @@ const tokenParams: { [tokenName: string]: TokenInitRecord; } = {
     incentiveWeight: 3,
     liquidationTokenPath: ['USDC', 'BASE'],
     decimals: 6,
+    BSCDecimals: 18,
   },
   WBTC: {
     exposureCap: 2000,
@@ -256,6 +259,7 @@ const {
 const targetChainId: '1' | '43114' | '137' | '56' = CHAIN_ID as unknown as '1' | '43114' | '137' | '56';
 console.log(`target chain: ${targetChainId}, ${NODE_URL}`);
 
+const pegDecimalCount = targetChainId === '56' ? 18 : 6;
 const pegDecimals = targetChainId === '56' ? utils.parseEther('1') : BigNumber.from(10 ** 6);
 
 function replaceBase(tokenPath: string[]) {
@@ -291,7 +295,7 @@ async function getAccountAddresses() {
 
   const topic = utils.id('AccountUpdated(address)');
   const lastBlock = Math.min(
-    await wallet.provider.getBlockNumber(), addressRecord.lastBlock + 10000 - 1,
+    await wallet.provider.getBlockNumber(), addressRecord.lastBlock + (targetChainId === '56' ? 5000 : 10000) - 1,
   );
   const events = await router
     .queryFilter({
@@ -319,8 +323,8 @@ async function getAccountAddresses() {
     // eslint-disable-next-line no-await-in-loop, no-use-before-define
     const meta = await getAccountMetadata(account);
     if (meta) {
-      const loan = meta.loan.div(pegDecimals);
-      const holdings = meta.holdings.div(pegDecimals);
+      const { loan } = meta;
+      const { holdings } = meta;
       if (meta.canBeLiquidated) {
         liquifiable.push(meta.address);
         totalLoan = totalLoan ? totalLoan.add(loan) : loan;
@@ -328,9 +332,11 @@ async function getAccountAddresses() {
       }
 
       if (holdings.gt(100)) {
-        console.log(`${account}: ${holdings.toString()} / ${loan}`);
+        const formattedHoldings = utils.formatUnits(holdings.toString(), pegDecimalCount);
+        const formattedLoan = utils.formatUnits(loan.toString(), pegDecimalCount);
+        console.log(`${account}: ${formattedHoldings} / ${formattedLoan}`);
         if (loan.gt(holdings)) {
-          console.log(`$${loan.sub(holdings).toString()} shortfall for ${account}`);
+          console.log(`Shortfall for ${account}. Loan: ${formattedLoan} Holdings: ${formattedHoldings}`);
         }
       } else if (holdings.lt(5)) {
         userAddresses.delete(account);
@@ -341,7 +347,7 @@ async function getAccountAddresses() {
   // eslint-disable-next-line no-use-before-define
   await exportAddresses(Array.from(userAddresses), targetChainId, lastBlock);
 
-  console.log(`To liquidate: Total holdings: ${totalHoldings}, total loan: ${totalLoan}`);
+  console.log(`To liquidate: Total holdings: ${totalHoldings?.toString() || 'none'}, total loan: ${totalLoan?.toString() || 'none'}`);
 
   return liquifiable;
 }
@@ -389,15 +395,23 @@ async function priceDisparity(name: string) {
   tokens?.push('USDT');
   const tokenPath = tokens?.map(tokenName => tokenAddresses[tokenName]);
   const amms = encodeAMMPath(tokenParams[name].ammPath || [AMMs.UNISWAP]);
-  // TODO - Gabe - please confirm that getAmountsIn can accept a string as the first arg
   const amountOut = pegDecimals.toString();
   const amountIn = (await router.getAmountsIn(amountOut, amms, tokenPath))[0];
   const currentPrice = (await cmt.viewCurrentPriceInPeg(tokenAddresses[name], amountIn));
-  const oneOfToken = `1${'0'.repeat(tokenParams[name].decimals)}`;
-  console.log((await cmt.viewCurrentPriceInPeg(tokenAddresses[name], oneOfToken)).div(pegDecimals));
+
+  const tokenDecimals = (targetChainId === '56' && tokenParams[name].BSCDecimals)
+    ? tokenParams[name].BSCDecimals!
+    : tokenParams[name].decimals;
+  const oneOfToken = `1${'0'.repeat(tokenDecimals)}`;
+  console.log(
+    (await cmt.viewCurrentPriceInPeg(
+      tokenAddresses[name], oneOfToken,
+    )).mul(100000).div(pegDecimals).toNumber() / 100000,
+  );
   const outAmounts = (await router.getAmountsOut(oneOfToken, amms, tokenPath));
-  console.log(outAmounts[outAmounts.length - 1].div(pegDecimals));
-  return currentPrice.div(amountOut);
+  console.log(outAmounts[outAmounts.length - 1].mul(100000).div(pegDecimals).toNumber() / 100000);
+
+  return currentPrice.mul(100000).div(amountOut).toNumber() / 100000;
 }
 
 async function exportAddresses(users: string[], chainID: string, lastBlock: number) {
