@@ -297,6 +297,7 @@ async function getAccountAddresses() {
   const lastBlock = Math.min(
     await wallet.provider.getBlockNumber(), addressRecord.lastBlock + (targetChainId === '56' ? 5000 : 10000) - 1,
   );
+  console.log(`querying from block ${addressRecord.lastBlock} to block ${lastBlock}`);
   const events = await router
     .queryFilter({
       address: MARGIN_ROUTER_ADDRESS,
@@ -347,7 +348,9 @@ async function getAccountAddresses() {
   // eslint-disable-next-line no-use-before-define
   await exportAddresses(Array.from(userAddresses), targetChainId, lastBlock);
 
-  console.log(`To liquidate: Total holdings: ${totalHoldings?.toString() || 'none'}, total loan: ${totalLoan?.toString() || 'none'}`);
+  const formattedTotalHoldings = utils.formatUnits(totalHoldings?.toString() || '0')
+  const formattedTotalLoan = utils.formatUnits(totalLoan?.toString() || '0');
+  console.log(`To liquidate: Total holdings: ${formattedTotalHoldings}, total loan: ${formattedTotalLoan}`);
 
   return liquifiable;
 }
@@ -425,7 +428,7 @@ async function exportAddresses(users: string[], chainID: string, lastBlock: numb
     users,
     lastBlock,
   };
-  const stringRepresentation = JSON.stringify(addresses, null, 2);
+  const stringRepresentation = JSON.stringify(addressList, null, 2);
 
   await fs.promises.writeFile(addressesPath, stringRepresentation);
   console.log(`Wrote ${addressesPath}. New state:`);
