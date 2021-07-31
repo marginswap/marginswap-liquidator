@@ -13,11 +13,11 @@ A script that:
 2. Create a file called `.env` in the root directory with the following keys in the following format:
 
 ```
-NODE_URL=https://yourinfuraoralchemyorsomething.node
-CHAIN_ID=1
+MAINNET_NODE_URL=https://yourinfuraoralchemyorsomething.node
+POLYGON_NODE_URL=...
 
 # optional parameters:
-# window facto within which to update prices
+# window factor within which to update prices
 PRICE_WINDOW=0.1
 # minimum loan amount for which to trigger liquidation
 MINIMUM_LOAN_USD=5

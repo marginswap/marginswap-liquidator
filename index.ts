@@ -57,9 +57,15 @@ export const tokensPerNetwork: Record<string, Record<string, string>> = {
   31337: {
     DAI: '0x6b175474e89094c44da98b954eedeac495271d0f',
     WETH: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-    USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-    ALCX: '0xdbdb4d16eda451d0503b854cf79d55697f90c8df',
     UNI: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
+    MKR: '0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2',
+    USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+    // BOND: '0x0391D2021f89DC339F60Fff84546EA23E337750f',
+    LINK: '0x514910771af9ca656af840dff83e8264ecf986ca',
+    USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    WBTC: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+    SUSHI: '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2',
+    ALCX: '0xdbdb4d16eda451d0503b854cf79d55697f90c8df',
   },
   43114: {
     WAVAX: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
@@ -253,10 +259,21 @@ const liquiPaths: Record<string, [string, string[], AMMs[]]> = {};
 type address = string;
 
 const {
-  NODE_URL, CHAIN_ID, MINIMUM_LOAN_USD, PRICE_WINDOW,
+  MINIMUM_LOAN_USD, PRICE_WINDOW,
 } = process.env;
 
-const targetChainId: '1' | '43114' | '137' | '56' = CHAIN_ID as unknown as '1' | '43114' | '137' | '56';
+const chainName = process.argv[process.argv.length -1];
+const NODE_URL =  process.env[`${chainName.toUpperCase()}_NODE_URL`];
+
+const chainIds: Record<string, '1' | '43114' | '137' | '56' | '31337'> = {
+  mainnet: '1',
+  avalanche: '43114',
+  polygon: '137',
+  bsc: '56',
+  local: '31337'
+}
+
+const targetChainId: '1' | '43114' | '137' | '56' | '31337' = chainIds[chainName] ?? '1';
 console.log(`target chain: ${targetChainId}, ${NODE_URL}`);
 
 const pegDecimalCount = targetChainId === '56' ? 18 : 6;
