@@ -1,7 +1,7 @@
 /* eslint-disable quote-props */
 /* eslint-disable no-console */
 import {
-  Contract, utils, providers, Wallet, BigNumber,
+  Contract, utils, providers, Wallet, BigNumber, Event
 } from 'ethers';
 import dotenv from 'dotenv';
 import contractAddresses from '@marginswap/core-abi/addresses.json';
@@ -262,8 +262,8 @@ const {
   MINIMUM_LOAN_USD, PRICE_WINDOW,
 } = process.env;
 
-const chainName = process.argv[process.argv.length -1];
-const NODE_URL =  process.env[`${chainName.toUpperCase()}_NODE_URL`];
+const chainName = process.argv[process.argv.length - 1];
+const NODE_URL = process.env[`${chainName.toUpperCase()}_NODE_URL`];
 
 const chainIds: Record<string, '1' | '43114' | '137' | '56' | '31337'> = {
   mainnet: '1',
@@ -271,7 +271,7 @@ const chainIds: Record<string, '1' | '43114' | '137' | '56' | '31337'> = {
   polygon: '137',
   bsc: '56',
   local: '31337'
-}
+};
 
 const targetChainId: '1' | '43114' | '137' | '56' | '31337' = chainIds[chainName] ?? '1';
 console.log(`target chain: ${targetChainId}, ${NODE_URL}`);
@@ -311,15 +311,27 @@ async function getAccountAddresses() {
   const addressRecord = addresses[targetChainId];
 
   const topic = utils.id('AccountUpdated(address)');
-  const lastBlock = Math.min(
-    await wallet.provider.getBlockNumber(), addressRecord.lastBlock + (targetChainId === '56' ? 5000 : 10000) - 1,
-  );
-  console.log(`querying from block ${addressRecord.lastBlock} to block ${lastBlock}`);
-  const events = await router
-    .queryFilter({
-      address: MARGIN_ROUTER_ADDRESS,
-      topics: [topic],
-    }, addressRecord.lastBlock, lastBlock);
+
+  const currentBlockNumber = await wallet.provider.getBlockNumber();
+  console.log(`current highest block: ${currentBlockNumber}`);
+  let startBlock = 0;
+  let lastBlock = addressRecord.lastBlock;
+  let events: Event[] = [];
+
+  const MAX_ITERATION = 30;
+  for (let i = 0; MAX_ITERATION > i && currentBlockNumber > lastBlock; i++) {
+    startBlock = lastBlock;
+    lastBlock = Math.min(
+      currentBlockNumber, startBlock + (targetChainId === '56' ? 4999 : 10000) - 1,
+    );
+
+    console.log(`querying from block ${startBlock} to block ${lastBlock}`);
+    events.push(... await router
+      .queryFilter({
+        address: MARGIN_ROUTER_ADDRESS,
+        topics: [topic],
+      }, startBlock, lastBlock));
+  }
 
   const liquifiable = [];
 
@@ -353,6 +365,7 @@ async function getAccountAddresses() {
         const formattedHoldings = utils.formatUnits(holdings.toString(), pegDecimalCount);
         const formattedLoan = utils.formatUnits(loan.toString(), pegDecimalCount);
         console.log(`${account}: ${formattedHoldings} / ${formattedLoan}`);
+        // await controlAccount(account);
         if (loan.gt(holdings)) {
           console.log(`Shortfall for ${account}. Loan: ${formattedLoan} Holdings: ${formattedHoldings}`);
         }
@@ -365,8 +378,8 @@ async function getAccountAddresses() {
   // eslint-disable-next-line no-use-before-define
   await exportAddresses(Array.from(userAddresses), targetChainId, lastBlock);
 
-  const formattedTotalHoldings = utils.formatUnits(totalHoldings?.toString() || '0')
-  const formattedTotalLoan = utils.formatUnits(totalLoan?.toString() || '0');
+  const formattedTotalHoldings = utils.formatUnits(totalHoldings?.toString() || '0', pegDecimalCount);
+  const formattedTotalLoan = utils.formatUnits(totalLoan?.toString() || '0', pegDecimalCount);
   console.log(`To liquidate: Total holdings: ${formattedTotalHoldings}, total loan: ${formattedTotalLoan}`);
 
   return liquifiable;
@@ -507,12 +520,25 @@ main().then(_ => process.exit());
 //   console.log(`Total: ${contractTotal.div(pegDecimals)} | ${controlTotal.div(pegDecimals)}`);
 // }
 
+// import { formatUnits } from 'ethers/lib/utils';
 // async function controlAccount(accountAddress:string) {
 //   const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
 //   let [tokens, amounts] = await cmt.getHoldingAmounts(accountAddress);
 //   console.log(`Holdings for ${accountAddress}:`);
-//   await controlInPeg(tokens, amounts);
+
+//   for (let i = 0; tokens.length > i; i++) {
+//     const [name, _namePath, _ammPath] = liquiPaths[tokens[i]];
+    
+//     console.log(`\t${name} ${formatUnits(amounts[i], tokenParams[name].decimals)}`)
+//   }
 //   [tokens, amounts] = await cmt.getBorrowAmounts(accountAddress);
 //   console.log(`Loans for ${accountAddress}:`);
-//   await controlInPeg(tokens, amounts);
+
+
+//   for (let i = 0; tokens.length > i; i++) {
+//     const [name, _namePath, _ammPath] = liquiPaths[tokens[i]];
+    
+//     console.log(`\t${name} ${formatUnits(amounts[i], tokenParams[name].decimals)}`)
+//   }
 // }
+// 
