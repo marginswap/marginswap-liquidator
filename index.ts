@@ -38,7 +38,7 @@ export const tokensPerNetwork: Record<string, Record<string, string>> = {
     //    USDT: USDT_ADDRESS,
     DAI: '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa',
     WETH: '0xd0a1e359811322d97991e03f863a0c30c2cf029c',
-    UNI: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
+    UNI: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984'
     //    MKR: "0xac94ea989f6955c67200dd67f0101e1865a560ea",
   },
   1: {
@@ -47,12 +47,14 @@ export const tokensPerNetwork: Record<string, Record<string, string>> = {
     UNI: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
     MKR: '0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2',
     USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-    // BOND: '0x0391D2021f89DC339F60Fff84546EA23E337750f',
+    BOND: '0x0391D2021f89DC339F60Fff84546EA23E337750f',
     LINK: '0x514910771af9ca656af840dff83e8264ecf986ca',
     USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
     WBTC: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
     SUSHI: '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2',
     ALCX: '0xdbdb4d16eda451d0503b854cf79d55697f90c8df',
+    YFI: '0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e',
+    FRAX: '0x853d955acef822db058eb8505911ed77f175b99e'
   },
   31337: {
     DAI: '0x6b175474e89094c44da98b954eedeac495271d0f',
@@ -60,29 +62,33 @@ export const tokensPerNetwork: Record<string, Record<string, string>> = {
     UNI: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
     MKR: '0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2',
     USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-    // BOND: '0x0391D2021f89DC339F60Fff84546EA23E337750f',
+    BOND: '0x0391D2021f89DC339F60Fff84546EA23E337750f',
     LINK: '0x514910771af9ca656af840dff83e8264ecf986ca',
     USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
     WBTC: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
     SUSHI: '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2',
     ALCX: '0xdbdb4d16eda451d0503b854cf79d55697f90c8df',
+    YFI: '0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e',
+    FRAX: '0x853d955acef822db058eb8505911ed77f175b99e'
   },
   43114: {
     WAVAX: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
-    ETH: '0xf20d962a6c8f70c731bd838a3a388D7d48fA6e15',
+    ETH: '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB',
     PNG: '0x60781C2586D68229fde47564546784ab3fACA982',
-    WBTC: '0x408D4cD0ADb7ceBd1F1A1C33A0Ba2098E1295bAB',
-    USDT: '0xde3A24028580884448a5397872046a019649b084',
+//    WBTC: '0x408D4cD0ADb7ceBd1F1A1C33A0Ba2098E1295bAB',
+    USDT: '0xc7198437980c041c805A1EDcbA50c1Ce5db95118'
   },
   137: {
-    USDC: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
-    WBTC: '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6',
-    DAI: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
-    WETH: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
-    WMATIC: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
-    USDT: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
-    LINK: '0x53E0bca35eC356BD5ddDFebbD1Fc0fD03FaBad39',
-    AAVE: '0xD6DF932A45C0f255f85145f286eA0b292B21C90B',
+    USDC: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+    WBTC: "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+    DAI: "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
+    ETH: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+    WMATIC: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    USDT: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+    LINK: "0x53E0bca35eC356BD5ddDFebbD1Fc0fD03FaBad39",
+    AAVE: "0xD6DF932A45C0f255f85145f286eA0b292B21C90B",
+    QUICK: "0x831753dd7087cac61ab5644b308642cc1c33dc13",
+    MAI: "0xa3fa99a148fa48d14ed51d610c367c61876997f1"
   },
   56: {
     WBNB: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
@@ -92,9 +98,10 @@ export const tokensPerNetwork: Record<string, Record<string, string>> = {
     BUSD: '0xe9e7cea3dedca5984780bafc599bd69add087d56',
     DAI: '0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3',
     BTCB: '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c',
-    USDT: '0x55d398326f99059ff775485246999027b3197955',
-  },
+    USDT: '0x55d398326f99059ff775485246999027b3197955'
+  }
 };
+
 
 type TokenInitRecord = {
   exposureCap: number;
@@ -107,6 +114,20 @@ type TokenInitRecord = {
 };
 
 const tokenParams: { [tokenName: string]: TokenInitRecord; } = {
+  FRAX: {
+    exposureCap: 10000000,
+    lendingBuffer: 10000,
+    incentiveWeight: 3,
+    liquidationTokenPath: ['FRAX', 'BASE'],
+    decimals: 18
+  },
+  YFI: {
+    exposureCap: 200,
+    lendingBuffer: 20,
+    incentiveWeight: 3,
+    liquidationTokenPath: ['YFI', 'BASE'],
+    decimals: 18
+  },
   WBNB: {
     exposureCap: 1000000,
     lendingBuffer: 10000,
@@ -244,6 +265,20 @@ const tokenParams: { [tokenName: string]: TokenInitRecord; } = {
     incentiveWeight: 3,
     liquidationTokenPath: ['PNG', 'BASE'],
     decimals: 18,
+  },
+  QUICK: {
+    exposureCap: 1000000,
+    lendingBuffer: 1,
+    incentiveWeight: 3,
+    liquidationTokenPath: ['QUICK', 'BASE'],
+    decimals: 18
+  },
+  MAI: {
+    exposureCap: 1000000,
+    lendingBuffer: 1,
+    incentiveWeight: 3,
+    liquidationTokenPath: ['MAI', 'BASE'],
+    decimals: 18
   },
   AAVE: {
     exposureCap: 1000000,
@@ -541,4 +576,3 @@ main().then(_ => process.exit());
 //     console.log(`\t${name} ${formatUnits(amounts[i], tokenParams[name].decimals)}`)
 //   }
 // }
-// 
