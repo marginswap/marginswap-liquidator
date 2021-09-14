@@ -75,9 +75,12 @@ export const tokensPerNetwork: Record<string, Record<string, string>> = {
     WAVAX: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
     ETH: '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB',
     PNG: '0x60781C2586D68229fde47564546784ab3fACA982',
-//    WBTC: '0x408D4cD0ADb7ceBd1F1A1C33A0Ba2098E1295bAB',
+    //    WBTC: '0x408D4cD0ADb7ceBd1F1A1C33A0Ba2098E1295bAB',
     USDT: '0xc7198437980c041c805A1EDcbA50c1Ce5db95118',
-    YAK: '0x59414b3089ce2AF0010e7523Dea7E2b35d776ec7'
+    YAK: '0x59414b3089ce2AF0010e7523Dea7E2b35d776ec7',
+    QI: '0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5',
+    XAVA: '0xd1c3f94DE7e5B45fa4eDBBA472491a9f4B166FC4'
+
   },
   137: {
     USDC: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
@@ -572,7 +575,7 @@ main().then(_ => process.exit());
 
 //   for (let i = 0; tokens.length > i; i++) {
 //     const [name, _namePath, _ammPath] = liquiPaths[tokens[i]];
-    
+
 //     console.log(`\t${name} ${formatUnits(amounts[i], tokenParams[name].decimals)}`)
 //   }
 //   [tokens, amounts] = await cmt.getBorrowAmounts(accountAddress);
@@ -581,7 +584,7 @@ main().then(_ => process.exit());
 
 //   for (let i = 0; tokens.length > i; i++) {
 //     const [name, _namePath, _ammPath] = liquiPaths[tokens[i]];
-    
+
 //     console.log(`\t${name} ${formatUnits(amounts[i], tokenParams[name].decimals)}`)
 //   }
 // }
