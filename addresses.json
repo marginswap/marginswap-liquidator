@@ -51,9 +51,10 @@
       "0xae4f2ec42437bfc972fdea52768725d683ad8373",
       "0x5891867717e326d4ee1375aa428f777a2591755e",
       "0xd908C0B105a237c790d805C87c2eB960283866a1",
-      "0xA31943Fb1389a47a6667271942d9D0C2eeb2a7c3"
+      "0xA31943Fb1389a47a6667271942d9D0C2eeb2a7c3",
+      "0x97e2C6EaE6f140c56f7B0f2a252D362e3d1DAF6d"
     ],
-    "lastBlock": 10916088
+    "lastBlock": 10916683
   },
   "137": {
     "users": [
@@ -103,7 +104,7 @@
       "0x37d4c786b31498754e99d7A763867ceC6ab553f7",
       "0xd04f2bB440C3FaF6B81c7730bC72bB31D13d2Bf3"
     ],
-    "lastBlock": 19110136
+    "lastBlock": 19110911
   },
   "31337": {
     "users": [
@@ -328,6 +329,6 @@
       "0xD13C38E2745F5852a62E7cF5A8ca8aF4dC364659",
       "0x8A0Fa3fC65Dd49a9594752361AE1a81F432599f0"
     ],
-    "lastBlock": 4335988
+    "lastBlock": 4336973
   }
 }
