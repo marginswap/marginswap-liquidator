@@ -351,7 +351,8 @@ for (const name in tokensPerNetwork[targetChainId]) {
   liquiPaths[getAddress(tokensPerNetwork[targetChainId][name])] = [name, [...replaceBase(tokenParams[name].liquidationTokenPath), 'USDT'], tokenParams[name].ammPath ?? [AMMs.UNISWAP]];
 }
 
-const MINIMUM_LOAN_AMOUNT = `${MINIMUM_LOAN_USD ?? '5'}${'0'.repeat(6)}`;
+const MINIMUM_LOAN_AMOUNT = utils.parseUnits(MINIMUM_LOAN_USD ?? '5', pegDecimalCount);
+const MEM_THRESH = MINIMUM_LOAN_AMOUNT.div(2);
 
 if (!targetChainId) {
   console.log('Provide a valid chain id');
@@ -424,7 +425,7 @@ async function getAccountAddresses() {
         totalHoldings = totalHoldings ? totalHoldings.add(holdings) : holdings;
       }
 
-      if (holdings.gt(100)) {
+      if (loan.gt(MEM_THRESH)) {
         const formattedHoldings = utils.formatUnits(holdings.toString(), pegDecimalCount);
         const formattedLoan = utils.formatUnits(loan.toString(), pegDecimalCount);
         console.log(`${account}: ${formattedHoldings} / ${formattedLoan}`);
@@ -432,7 +433,7 @@ async function getAccountAddresses() {
         if (loan.gt(holdings)) {
           console.log(`Shortfall for ${account}. Loan: ${formattedLoan} Holdings: ${formattedHoldings}`);
         }
-      } else if (holdings.lt(5)) {
+      } else {
         userAddresses.delete(account);
       }
     }
