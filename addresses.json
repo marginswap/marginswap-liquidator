@@ -8,11 +8,11 @@
       "0x71dF7c98f02D4554b8A3077BC17513a94649EAdD",
       "0x8C9277158DD4647cf6cc9b9fE21F78Ae25fe42C9"
     ],
-    "lastBlock": 13536623
+    "lastBlock": 13566516
   },
   "56": {
     "users": [],
-    "lastBlock": 12403827
+    "lastBlock": 12432328
   },
   "137": {
     "users": [
@@ -20,7 +20,7 @@
       "0x734Caa5F4C9E0A60Dd5A16166C19BaE9020051c4",
       "0x653d244aE9E07A40449653f02334419DF07deE76"
     ],
-    "lastBlock": 21032929
+    "lastBlock": 21071990
   },
   "31337": {
     "users": [
@@ -117,10 +117,12 @@
       "0xA6f1c49bfBD1545Bb52f92Ab9DE774688EA12f00",
       "0x94C7fceea24c7624AfF26474901cA1d26DE50D94",
       "0x653d244aE9E07A40449653f02334419DF07deE76",
-      "0x21c516BF34ba2E304cAcE037482F085bE93ff880",
       "0xCaB151544Aa6f7eE37831b4611D25e38e2e0a59d",
-      "0xcd081FE01Bb797C2AfDB01B0E3a62Ed3fb8900d6"
+      "0xcd081FE01Bb797C2AfDB01B0E3a62Ed3fb8900d6",
+      "0x51226C14Ad933cFC2031C033aFB26702f3E90384",
+      "0xc20BDB58325b408dd80B58780ac6cCC4C60432B8",
+      "0x6f58a3743357Bc488d9B14FA875ea91e98439dab"
     ],
-    "lastBlock": 6578154
+    "lastBlock": 6619985
   }
 }
