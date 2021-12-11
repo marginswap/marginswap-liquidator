@@ -594,10 +594,10 @@
     "@ethersproject/properties" "^5.1.0"
     "@ethersproject/strings" "^5.1.0"
 
-"@marginswap/core-abi@1.4.1":
-  "integrity" "sha512-BjpQyGQShd8ZZogkjZcz6qakXu9phSU4xZ3XF8AGOoUmYfBiwewY2YCBVpV6QT9eCgU7lYzQk0pBPjNXXc5ssA=="
-  "resolved" "https://registry.npmjs.org/@marginswap/core-abi/-/core-abi-1.4.1.tgz"
-  "version" "1.4.1"
+"@marginswap/core-abi@1.5.5":
+  "integrity" "sha512-bUAKqNzmRd8MgaNMSBoFCn43tvsV3B6Gj9Jf0FuQ/bDIdTcZtTArq1pcRBOFBN+ntYO3a7jt7URZUR7UA9dpLQ=="
+  "resolved" "https://registry.npmjs.org/@marginswap/core-abi/-/core-abi-1.5.5.tgz"
+  "version" "1.5.5"
 
 "@nodelib/fs.scandir@2.1.4":
   "integrity" "sha512-33g3pMJk3bg5nXbL/+CY6I2eJDzZAni49PfJnL5fghPTggPvBd/pFNSgJsdAgWptuFu7qq/ERvOYFlhvsLTCKA=="

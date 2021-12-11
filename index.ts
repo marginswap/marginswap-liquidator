@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import contractAddresses from '@marginswap/core-abi/addresses.json';
 import MarginRouter from '@marginswap/core-abi/artifacts/contracts/MarginRouter.sol/MarginRouter.json';
 import CrossMarginTrading from '@marginswap/core-abi/artifacts/contracts/CrossMarginTrading.sol/CrossMarginTrading.json';
+import CrossMarginLiquidationV2 from '@marginswap/core-abi/artifacts/contracts/CrossMarginLiquidationV2.sol/CrossMarginLiquidationV2.json';
 import fs from 'fs';
 import { getAddress } from '@ethersproject/address';
 import path from 'path';
@@ -29,7 +30,7 @@ const baseCurrency: Record<string, string> = {
   '1': 'WETH',
   '137': 'WMATIC',
   '43114': 'WAVAX',
-  '31337': 'WETH',
+  '31337': 'WAVAX',
   '56': 'WBNB',
 };
 
@@ -57,30 +58,30 @@ export const tokensPerNetwork: Record<string, Record<string, string>> = {
     FRAX: '0x853d955acef822db058eb8505911ed77f175b99e'
   },
   31337: {
-    DAI: '0x6b175474e89094c44da98b954eedeac495271d0f',
-    WETH: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-    UNI: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
-    MKR: '0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2',
-    USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-    BOND: '0x0391D2021f89DC339F60Fff84546EA23E337750f',
-    LINK: '0x514910771af9ca656af840dff83e8264ecf986ca',
-    USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-    WBTC: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
-    SUSHI: '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2',
-    ALCX: '0xdbdb4d16eda451d0503b854cf79d55697f90c8df',
-    YFI: '0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e',
-    FRAX: '0x853d955acef822db058eb8505911ed77f175b99e'
+    WAVAX: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
+    ETH: '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB',
+    PNG: '0x60781C2586D68229fde47564546784ab3fACA982',
+    WBTC: '0x408D4cD0ADb7ceBd1F1A1C33A0Ba2098E1295bAB',
+    USDT: '0xc7198437980c041c805A1EDcbA50c1Ce5db95118',
+    YAK: '0x59414b3089ce2AF0010e7523Dea7E2b35d776ec7',
+    QI: '0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5',
+    XAVA: '0xd1c3f94DE7e5B45fa4eDBBA472491a9f4B166FC4',
+    JOE: '0x6e84a6216ea6dacc71ee8e6b0a5b7322eebc0fdd',
+    USDC: '0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664',
+    DAI: '0xd586e7f844cea2f87f50152665bcbc2c279d8d70'
   },
   43114: {
     WAVAX: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
     ETH: '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB',
     PNG: '0x60781C2586D68229fde47564546784ab3fACA982',
-    //    WBTC: '0x408D4cD0ADb7ceBd1F1A1C33A0Ba2098E1295bAB',
+    WBTC: '0x408D4cD0ADb7ceBd1F1A1C33A0Ba2098E1295bAB',
     USDT: '0xc7198437980c041c805A1EDcbA50c1Ce5db95118',
     YAK: '0x59414b3089ce2AF0010e7523Dea7E2b35d776ec7',
     QI: '0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5',
-    XAVA: '0xd1c3f94DE7e5B45fa4eDBBA472491a9f4B166FC4'
-
+    XAVA: '0xd1c3f94DE7e5B45fa4eDBBA472491a9f4B166FC4',
+    JOE: '0x6e84a6216ea6dacc71ee8e6b0a5b7322eebc0fdd',
+    USDC: '0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664',
+    DAI: '0xd586e7f844cea2f87f50152665bcbc2c279d8d70'
   },
   137: {
     USDC: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
@@ -473,12 +474,19 @@ async function getAccountMetadata(account: address):
 }
 
 function liquidateAccounts(accounts: address[]) {
-  const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
-  // cmt.defaultCommon = {
-  //   customChain: {name: 'hardhat', chainId: 1, networkId: 31337}, baseChain: 'mainnet'
-  // };
   if (accounts.length > 0) {
-    return cmt.liquidate(accounts, { gasLimit: 8000000 });
+    if (['43114', '31337'].includes(targetChainId)) {
+      const lv2 = new Contract(contractAddresses['43114'].CrossMarginLiquidationV2!, CrossMarginLiquidationV2.abi, wallet);
+      return lv2.liquidate(accounts, encodeAMMPath([AMMs.SUSHISWAP, AMMs.SUSHISWAP, AMMs.SUSHISWAP]), { gasLimit: 8000000 });
+    } else {
+      const cmt = new Contract(CROSS_MARGIN_TRADING_ADDRESS, CrossMarginTrading.abi, wallet);
+      // cmt.defaultCommon = {
+      //   customChain: {name: 'hardhat', chainId: 1, networkId: 31337}, baseChain: 'mainnet'
+      // };
+
+      return cmt.liquidate(accounts, { gasLimit: 8000000 });
+    }
+  
   }
 
   return undefined;
