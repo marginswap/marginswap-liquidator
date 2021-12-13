@@ -119,6 +119,14 @@ type TokenInitRecord = {
 };
 
 const tokenParams: { [tokenName: string]: TokenInitRecord; } = {
+  JOE: {
+    exposureCap: 200000,
+    lendingBuffer: 100,
+    incentiveWeight: 1,
+    liquidationTokenPath: ['JOE', 'BASE'],
+    decimals: 18,
+    ammPath: [AMMs.SUSHISWAP, AMMs.SUSHISWAP],
+  },
   XAVA: {
     exposureCap: 200000,
     lendingBuffer: 100,
