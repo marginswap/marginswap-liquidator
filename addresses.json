@@ -18,7 +18,7 @@
       "0xAFBA10a2dC26D1af43cB7c22EFE0c239Eb265DcC",
       "0xfe4F2C9931D8c0FAf65EF68e19a64Eb8ca112E64"
     ],
-    "lastBlock": 22888825
+    "lastBlock": 22927471
   },
   "31337": {
     "users": [
@@ -118,6 +118,6 @@
       "0xe28BB0e8480ceE6Dc24e99dFAc061991162f9EA3",
       "0xFcf85BE66C64A8230919DbB9BE7E7A4a5c3eF318"
     ],
-    "lastBlock": 8635274
+    "lastBlock": 8677821
   }
 }
