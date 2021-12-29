@@ -4,7 +4,7 @@
       "0xDe012268Be176a6C6f8E93E3B4F8CDE4B1ed0390",
       "0x71dF7c98f02D4554b8A3077BC17513a94649EAdD"
     ],
-    "lastBlock": 13890834
+    "lastBlock": 13897292
   },
   "56": {
     "users": [],
@@ -17,7 +17,7 @@
       "0xAFBA10a2dC26D1af43cB7c22EFE0c239Eb265DcC",
       "0xfe4F2C9931D8c0FAf65EF68e19a64Eb8ca112E64"
     ],
-    "lastBlock": 23044958
+    "lastBlock": 23084859
   },
   "31337": {
     "users": [
@@ -112,6 +112,6 @@
       "0x0b9515C6Dd47cB804668e94C403b44FB37c2aD9A",
       "0x6f58a3743357Bc488d9B14FA875ea91e98439dab"
     ],
-    "lastBlock": 8805537
+    "lastBlock": 8848095
   }
 }
