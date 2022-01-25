@@ -8,14 +8,14 @@
   },
   "56": {
     "users": [],
-    "lastBlock": 14631978
+    "lastBlock": 14660730
   },
   "137": {
     "users": [
       "0x68b18d388994336f341b4997360bb45f9f8701c9",
       "0xc4cB024d4Fab16186B8bE8C0a5780CAA172Daad8"
     ],
-    "lastBlock": 24087018
+    "lastBlock": 24127507
   },
   "31337": {
     "users": [
@@ -95,6 +95,6 @@
       "0xC8160b24922664d9b3CF7f0acBC149dC33917d15",
       "0x99eFaAFb41a2D4512317ef7Dcd1B13b860C727f2"
     ],
-    "lastBlock": 9973138
+    "lastBlock": 10017078
   }
 }
